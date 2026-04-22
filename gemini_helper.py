@@ -1,16 +1,27 @@
 """
 gemini_helper.py – Google Gemini AI Connection
-Save in: khareef_health/ folder
+Works both locally (.env) and on Streamlit Cloud (st.secrets)
 """
 
 import os
 
-# Load .env file
+# Try to load streamlit secrets first (for cloud deployment)
+GEMINI_API_KEY = ""
+
 try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
+    import streamlit as st
+    GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
+except Exception:
     pass
+
+# If not found in streamlit secrets, try .env file (for local use)
+if not GEMINI_API_KEY:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    except Exception:
+        pass
 
 # Load Gemini library
 try:
@@ -18,9 +29,6 @@ try:
     GENAI_AVAILABLE = True
 except ImportError:
     GENAI_AVAILABLE = False
-
-# Get API key
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # Configure Gemini if available
 if GENAI_AVAILABLE and GEMINI_API_KEY:
@@ -35,9 +43,9 @@ def is_api_key_configured():
 def get_api_key_status():
     """Returns status message about API key."""
     if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
-        return "No API key found. Add to .env file."
+        return "No API key found. Add to .env file or Streamlit secrets."
     elif not GENAI_AVAILABLE:
-        return "google-generativeai not installed. Run: pip install google-generativeai"
+        return "google-generativeai not installed."
     else:
         preview = GEMINI_API_KEY[:8] + "..." + GEMINI_API_KEY[-4:]
         return f"API key loaded: {preview}"
@@ -108,7 +116,6 @@ ARABIC:
         response = model.generate_content(prompt)
         full_text = response.text.strip()
 
-        # Parse English and Arabic
         advice_en = ""
         advice_ar = ""
 
