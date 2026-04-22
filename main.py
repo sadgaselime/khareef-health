@@ -58,7 +58,7 @@ with st.sidebar:
 # ══════════════════════════════════════
 # HEADER
 # ══════════════════════════════════════
-st.title("🌿 Khareef Health")
+st.title("🌿 Khareef Health  |  by Sadga Selime")
 st.subheader("AI Telemedicine Triage · Salalah, Dhofar, Oman")
 st.markdown("**مساعد الفرز الطبي الذكي · صلالة، ظفار، عُمان**")
 st.caption("👨‍💻 Designed & Built by Sadga Selime")
