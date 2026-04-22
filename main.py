@@ -61,7 +61,7 @@ with st.sidebar:
 st.title("🌿 Khareef Health")
 st.subheader("AI Telemedicine Triage · Salalah, Dhofar, Oman")
 st.markdown("**مساعد الفرز الطبي الذكي · صلالة، ظفار، عُمان**")
-
+st.caption("👨‍💻 Designed & Built by Sadga Selime")
 if khareef_mode:
     st.warning("🌦️ Khareef Mode Active — Respiratory symptoms monitored with higher sensitivity")
 
@@ -283,4 +283,4 @@ if show_log:
         st.info("No assessments yet.")
 
 st.markdown("---")
-st.caption("🌿 Khareef Health · Salalah, Oman · Powered by Google Gemini AI · Educational use only")
+st.caption("🌿 Khareef Health · Designed by Sadga Selime · Salalah, Oman · Powered by Google Gemini AI")
