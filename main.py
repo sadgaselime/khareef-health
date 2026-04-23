@@ -210,15 +210,13 @@ st.markdown(f"""
 st.markdown("#### ⚙️ Settings")
 s1, s2, s3, s4, s5 = st.columns([1.2, 1, 1, 1, 1.5])
 
+st.markdown("#### ⚙️ Settings")
+s1, s2, s3, s4, s5 = st.columns([1.2, 1, 1, 1, 1.5])
+
 with s1:
-    gender = st.selectbox("👤 Gender Theme", ["Not specified","Male","Female"],
+    gender = st.selectbox("🎨 Gender Theme / اختر الثيم", ["Not specified","Male","Female"],
         index=["Not specified","Male","Female"].index(st.session_state.gender),
-        key="main_gender", label_visibility="collapsed")
-    if gender != st.session_state.gender:
-        st.session_state.gender = gender
-        st.rerun()
-    theme_labels = {"Male":"💙 Blue Theme","Female":"💗 Rose Theme","Not specified":"💚 Green Theme"}
-    st.caption(theme_labels[st.session_state.gender])
+        key="main_gender")
 
 with s2:
     khareef_mode = st.toggle("🌦️ Khareef Mode", value=st.session_state.khareef_mode, key="khareef_toggle")
