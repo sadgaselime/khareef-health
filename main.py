@@ -299,19 +299,14 @@ g_emoji = "👨" if st.session_state.gender=="Male" else "👩" if st.session_st
 st.markdown(f"""
 <div class="app-header" style="position:relative;overflow:hidden;">
 
-  <!-- Decorative medical SVG icons in background -->
   <svg style="position:absolute;top:-10px;right:20px;opacity:0.08;width:180px;height:180px;"
        viewBox="0 0 200 200" fill="white">
-    <!-- Stethoscope shape -->
     <circle cx="60" cy="140" r="18" stroke="white" stroke-width="6" fill="none"/>
     <path d="M42 140 Q42 80 80 60 Q118 40 140 60 L140 90" stroke="white" stroke-width="6" fill="none" stroke-linecap="round"/>
     <circle cx="140" cy="100" r="12" fill="white" opacity="0.6"/>
-    <!-- Cross/plus -->
     <rect x="150" y="30" width="8" height="30" rx="4" fill="white"/>
     <rect x="140" y="40" width="30" height="8" rx="4" fill="white"/>
-    <!-- Heart -->
     <path d="M20 30 C20 22 30 18 35 25 C40 18 50 22 50 30 C50 40 35 50 35 50 C35 50 20 40 20 30Z" fill="white" opacity="0.5"/>
-    <!-- Pills -->
     <ellipse cx="170" cy="150" rx="14" ry="8" transform="rotate(-35 170 150)" stroke="white" stroke-width="5" fill="none"/>
     <line x1="162" y1="145" x2="178" y2="155" stroke="white" stroke-width="3"/>
   </svg>
@@ -451,7 +446,8 @@ if not st.session_state.welcomed:
                 log_visitor(name="Anonymous (skipped)", action="skipped welcome")
                 st.rerun()
 
-    st.stop()  # Don't show the rest of the app until welcomed
+    st.markdown("---")
+    st.info("Please fill in your name above and click Continue to access the app.")
 
 tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, tab_skin, tab_medscan, tab_research, tab_about = st.tabs([
     "👤 My Profile",
