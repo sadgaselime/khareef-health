@@ -51,21 +51,43 @@ def save_profile(p):
 
 
 # ══════════════════════════════════════
-# VISITOR TRACKING
-# Records every visit automatically
+# VISITOR TRACKING SYSTEM
+# Tracks every visitor with as much
+# detail as possible
 # ══════════════════════════════════════
 VISITORS_FILE = "visitors.json"
+import uuid
 
-def log_visitor():
-    """Logs every app visit with timestamp."""
+def log_visitor(name="Anonymous", phone="", action="opened app"):
+    """Logs a visitor with all available details."""
     try:
         visitors = load_json(VISITORS_FILE)
         visit = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "date":      datetime.now().strftime("%Y-%m-%d"),
-            "time":      datetime.now().strftime("%H:%M"),
+            "timestamp":  datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "date":       datetime.now().strftime("%Y-%m-%d"),
+            "time":       datetime.now().strftime("%H:%M"),
+            "name":       name if name else "Anonymous",
+            "phone":      phone if phone else "Not provided",
+            "action":     action,
+            "session_id": st.session_state.get("session_id", "unknown"),
         }
         visitors.append(visit)
+        save_json(VISITORS_FILE, visitors)
+    except Exception:
+        pass
+
+def update_visitor_action(action: str):
+    """Updates what the current visitor did."""
+    try:
+        visitors = load_json(VISITORS_FILE)
+        sid = st.session_state.get("session_id", "")
+        # Update the most recent entry for this session
+        for v in reversed(visitors):
+            if v.get("session_id") == sid:
+                v["action"] = action
+                v["name"]   = st.session_state.get("user_name", v.get("name","Anonymous")) or "Anonymous"
+                v["phone"]  = st.session_state.get("user_phone", v.get("phone","")) or "Not provided"
+                break
         save_json(VISITORS_FILE, visitors)
     except Exception:
         pass
@@ -73,18 +95,26 @@ def log_visitor():
 def get_visitor_stats():
     visitors = load_json(VISITORS_FILE)
     if not visitors:
-        return {"total": 0, "today": 0, "by_date": {}}
+        return {"total": 0, "today": 0, "named": 0, "anonymous": 0, "by_date": {}}
     today = datetime.now().strftime("%Y-%m-%d")
-    today_visits  = sum(1 for v in visitors if v.get("date") == today)
-    by_date = {}
-    for v in visitors:
-        d = v.get("date", "unknown")
-        by_date[d] = by_date.get(d, 0) + 1
-    return {"total": len(visitors), "today": today_visits, "by_date": by_date}
+    return {
+        "total":     len(visitors),
+        "today":     sum(1 for v in visitors if v.get("date") == today),
+        "named":     sum(1 for v in visitors if v.get("name","Anonymous") != "Anonymous"),
+        "anonymous": sum(1 for v in visitors if v.get("name","Anonymous") == "Anonymous"),
+        "by_date":   {v.get("date","?"): 0 for v in visitors},
+    }
 
-# Track this visit (runs every time app loads)
+# Generate unique session ID for this visitor
+if "session_id" not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())[:8]
+
+# Log this visit once per session
 if "visit_logged" not in st.session_state:
-    log_visitor()
+    log_visitor(
+        name=st.session_state.get("user_name",""),
+        action="opened app"
+    )
     st.session_state.visit_logged = True
 
 # ══════════════════════════════════════
@@ -233,6 +263,58 @@ st.markdown("---")
 # ══════════════════════════════════════
 # MAIN TABS
 # ══════════════════════════════════════
+
+# ══════════════════════════════════════
+# WELCOME SCREEN — captures visitor name
+# Shows once per session
+# ══════════════════════════════════════
+if "welcomed" not in st.session_state:
+    st.session_state.welcomed = False
+
+if not st.session_state.welcomed:
+    st.markdown(f"""
+    <div style="background:linear-gradient({T['g']});border-radius:18px;
+         padding:30px 36px;color:white;text-align:center;margin-bottom:20px;
+         box-shadow:0 8px 28px {T['p']}44;">
+        <div style="font-size:2.5rem">🌿</div>
+        <div style="font-size:1.4rem;font-weight:700;margin:8px 0">
+            Welcome to Khareef Health</div>
+        <div style="opacity:0.85;font-size:0.95rem">
+            Please introduce yourself so we can personalise your experience</div>
+        <div style="font-family:'Tajawal',sans-serif;opacity:0.75;font-size:0.9rem;margin-top:4px">
+            يرجى التعريف بنفسك لتخصيص تجربتك</div>
+    </div>""", unsafe_allow_html=True)
+
+    wc1, wc2, wc3 = st.columns([1,2,1])
+    with wc2:
+        w_name  = st.text_input("Your Name / اسمك",
+            placeholder="e.g. Ahmed Al-Shanfari", key="w_name")
+        w_phone = st.text_input("Phone (optional) / الهاتف (اختياري)",
+            placeholder="+968 9X XXX XXXX", key="w_phone")
+
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button("▶️ Continue / متابعة",
+                    type="primary", use_container_width=True, key="w_continue"):
+                st.session_state.welcomed    = True
+                st.session_state.user_name   = w_name.strip() if w_name else ""
+                st.session_state.user_phone  = w_phone.strip() if w_phone else ""
+                # Log with name if provided
+                log_visitor(
+                    name=w_name.strip() if w_name else "Anonymous",
+                    phone=w_phone.strip() if w_phone else "",
+                    action="entered name and continued"
+                )
+                st.rerun()
+        with col_btn2:
+            if st.button("Skip / تخطي",
+                    use_container_width=True, key="w_skip"):
+                st.session_state.welcomed = True
+                log_visitor(name="Anonymous (skipped)", action="skipped welcome")
+                st.rerun()
+
+    st.stop()  # Don't show the rest of the app until welcomed
+
 tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, tab_about = st.tabs([
     "👤 My Profile",
     "🩺 Health Check",
@@ -682,6 +764,10 @@ with tab_assess:
             }
             save_record(record)
             log_patient(patient, result)
+            # Update visitor log with what they did
+            update_visitor_action(
+                f"ran health check — triage: {result['level']}"
+            )
 
             st.markdown("---")
             st.markdown(f"## Results for **{patient.name}**")
@@ -1490,70 +1576,187 @@ if is_admin_url:
 
         # ── VISITOR STATS ──
         st.markdown("### 👥 Visitor Statistics")
+        visitors_raw = load_json(VISITORS_FILE)
         stats = get_visitor_stats()
-        v1, v2 = st.columns(2)
-        v1.metric("🌍 Total Visits", stats["total"])
-        v2.metric("📅 Today's Visits", stats["today"])
 
-        if stats["by_date"]:
-            st.markdown("**Visits by Date:**")
-            df_visitors = pd.DataFrame([
-                {"Date": d, "Visits": c}
-                for d, c in sorted(stats["by_date"].items(), reverse=True)
-            ])
-            st.dataframe(df_visitors, use_container_width=True, height=250)
-            st.download_button("📥 Download Visitor Log",
-                pd.DataFrame(load_json(VISITORS_FILE)).to_csv(index=False),
-                "visitors.csv", "text/csv", key="dl_vis")
+        v1, v2, v3, v4 = st.columns(4)
+        v1.metric("🌍 Total Visits",     stats["total"])
+        v2.metric("📅 Today",            stats["today"])
+        v3.metric("✍️ Named Visitors",   stats["named"])
+        v4.metric("👤 Anonymous",        stats["anonymous"])
+
+        if visitors_raw:
+            st.markdown("### 📋 Full Visitor Log (Everyone Who Opened the App)")
+            df_vis = pd.DataFrame(visitors_raw).sort_values(
+                "timestamp", ascending=False)
+
+            # Search
+            vis_search = st.text_input("Search visitors by name:",
+                key="vis_search", placeholder="Type a name...")
+            if vis_search:
+                df_vis = df_vis[df_vis["name"].str.contains(
+                    vis_search, case=False, na=False)]
+
+            st.markdown(f"**{len(df_vis)} visitor records**")
+            st.dataframe(df_vis, use_container_width=True, height=350)
+
+            vc1, vc2 = st.columns(2)
+            with vc1:
+                st.download_button("📥 Download Visitor Log CSV",
+                    df_vis.to_csv(index=False),
+                    "visitors.csv", "text/csv", key="dl_vis")
+            with vc2:
+                if st.button("🗑️ Clear Visitor Log", key="clr_vis"):
+                    if os.path.exists(VISITORS_FILE): os.remove(VISITORS_FILE)
+                    st.success("Visitor log cleared!"); st.rerun()
 
         st.markdown("---")
 
-        # ── USER RECORDS ──
-        st.markdown("### 📋 All User Assessment Records")
+        # ── HEALTH CHECK HISTORY ──
+        st.markdown("### 🩺 Health Check History — Everyone Who Used the App")
         records = load_json(RECORDS_FILE)
+
         if records:
             df_r = pd.DataFrame(records).sort_values("timestamp", ascending=False)
-            s1,s2,s3,s4 = st.columns(4)
-            s1.metric("Total Checks",  len(df_r))
-            s2.metric("🟢 Green",  len(df_r[df_r["triage_level"]=="GREEN"]))
-            s3.metric("🟡 Yellow", len(df_r[df_r["triage_level"]=="YELLOW"]))
-            s4.metric("🔴 Red",    len(df_r[df_r["triage_level"]=="RED"]))
 
-            search = st.text_input("Search by name:", key="adm_search")
-            if search:
-                df_r = df_r[df_r["name"].str.contains(search, case=False, na=False)]
+            # Summary metrics
+            r1,r2,r3,r4,r5 = st.columns(5)
+            r1.metric("Total Checks",  len(df_r))
+            r2.metric("🟢 Green",  len(df_r[df_r["triage_level"]=="GREEN"]))
+            r3.metric("🟡 Yellow", len(df_r[df_r["triage_level"]=="YELLOW"]))
+            r4.metric("🔴 Red",    len(df_r[df_r["triage_level"]=="RED"]))
+            r5.metric("🤖 Used AI", len(df_r[df_r.get("ai_used", False) == True]) if "ai_used" in df_r.columns else 0)
 
-            st.dataframe(df_r, use_container_width=True, height=380)
-            ac1, ac2 = st.columns(2)
-            with ac1:
+            st.markdown("---")
+
+            # Individual record viewer
+            st.markdown("#### 🔍 View Individual Patient Record")
+            if len(df_r) > 0:
+                names_list = df_r["name"].tolist()
+                selected_patient = st.selectbox(
+                    "Select a patient to view full record:",
+                    options=range(len(names_list)),
+                    format_func=lambda i: f"{df_r.iloc[i]['timestamp']} — {df_r.iloc[i]['name']} — {df_r.iloc[i]['triage_level']}",
+                    key="patient_select"
+                )
+                patient_record = df_r.iloc[selected_patient]
+
+                # Display full record in a nice card
+                level = patient_record.get("triage_level","")
+                level_color = {"GREEN":"#16a34a","YELLOW":"#d97706","RED":"#dc2626"}.get(level,"#6b7280")
+                level_bg    = {"GREEN":"#dcfce7","YELLOW":"#fef9c3","RED":"#fee2e2"}.get(level,"#f3f4f6")
+
+                st.markdown(f"""
+                <div style="background:{level_bg};border-left:5px solid {level_color};
+                     border-radius:12px;padding:20px 24px;margin:12px 0;">
+                    <div style="font-size:1.3rem;font-weight:700;color:{level_color}">
+                        {patient_record.get('name','Unknown')} — {level}
+                    </div>
+                    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.9rem;">
+                        <div>📅 <b>Time:</b> {patient_record.get('timestamp','')}</div>
+                        <div>🎂 <b>Age:</b> {patient_record.get('age','')}</div>
+                        <div>⚧ <b>Gender:</b> {patient_record.get('gender','')}</div>
+                        <div>📍 <b>City:</b> {patient_record.get('city','')}</div>
+                        <div>📞 <b>Phone:</b> {patient_record.get('phone','Not provided')}</div>
+                        <div>🩸 <b>Blood Type:</b> {patient_record.get('blood_type','')}</div>
+                        <div>🩺 <b>BP:</b> {patient_record.get('bp','')}</div>
+                        <div>🩸 <b>Blood Sugar:</b> {patient_record.get('blood_sugar','')}</div>
+                        <div>🌡️ <b>Temperature:</b> {patient_record.get('temperature','')}</div>
+                        <div>🤒 <b>Symptoms:</b> {patient_record.get('symptoms','')}</div>
+                        <div>💊 <b>Conditions:</b> {patient_record.get('conditions','')}</div>
+                        <div>🤖 <b>AI Used:</b> {'Yes' if patient_record.get('ai_used') else 'No'}</div>
+                    </div>
+                    <div style="margin-top:12px;font-size:0.88rem;background:white;
+                         border-radius:8px;padding:10px 14px;color:#374151;">
+                        <b>🔍 Findings:</b><br>{patient_record.get('findings','').replace(' | ','<br>')}
+                    </div>
+                </div>""", unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # Search and filter all records
+            st.markdown("#### 📋 All Records Table")
+            rc1, rc2 = st.columns(2)
+            with rc1:
+                rec_search = st.text_input("Search by name:", key="adm_search")
+            with rc2:
+                level_filter = st.multiselect("Filter by level:",
+                    ["GREEN","YELLOW","RED"],
+                    default=["GREEN","YELLOW","RED"], key="adm_filter")
+
+            df_filtered = df_r.copy()
+            if rec_search:
+                df_filtered = df_filtered[df_filtered["name"].str.contains(rec_search, case=False, na=False)]
+            if level_filter:
+                df_filtered = df_filtered[df_filtered["triage_level"].isin(level_filter)]
+
+            st.markdown(f"**Showing {len(df_filtered)} records**")
+            st.dataframe(df_filtered, use_container_width=True, height=350)
+
+            dl1, dl2, dl3 = st.columns(3)
+            with dl1:
                 st.download_button("📥 Download CSV",
-                    df_r.to_csv(index=False), "records.csv", "text/csv", key="adm_csv")
-            with ac2:
+                    df_filtered.to_csv(index=False),
+                    "health_records.csv", "text/csv", key="adm_csv")
+            with dl2:
                 st.download_button("📥 Download JSON",
                     json.dumps(records, indent=2, ensure_ascii=False),
-                    "records.json", "application/json", key="adm_json")
-
-            if st.button("🗑️ Clear Records", key="adm_clear_r"):
-                if os.path.exists(RECORDS_FILE): os.remove(RECORDS_FILE)
-                st.success("Records cleared!"); st.rerun()
+                    "health_records.json", "application/json", key="adm_json")
+            with dl3:
+                if st.button("🗑️ Clear All Records", key="adm_clear_r"):
+                    if os.path.exists(RECORDS_FILE): os.remove(RECORDS_FILE)
+                    st.success("Records cleared!"); st.rerun()
         else:
-            st.info("No assessment records yet.")
+            st.info("No health checks recorded yet. Records appear here when users click Assess My Health.")
 
         st.markdown("---")
 
         # ── SAVED PROFILES ──
-        st.markdown("### 👤 All Saved Profiles")
+        st.markdown("### 👤 All Saved User Profiles")
         profiles = load_json(PROFILES_FILE)
         if profiles:
-            st.dataframe(pd.DataFrame(profiles), use_container_width=True)
-            st.download_button("📥 Download Profiles",
-                pd.DataFrame(profiles).to_csv(index=False),
-                "profiles.csv", "text/csv", key="adm_prof")
-            if st.button("🗑️ Clear Profiles", key="adm_clear_p"):
-                if os.path.exists(PROFILES_FILE): os.remove(PROFILES_FILE)
-                st.success("Profiles cleared!"); st.rerun()
+            df_p = pd.DataFrame(profiles).sort_values("saved_at", ascending=False) if "saved_at" in pd.DataFrame(profiles).columns else pd.DataFrame(profiles)
+
+            # Individual profile viewer
+            st.markdown("#### 🔍 View Individual Profile")
+            p_names = [f"{p.get('saved_at','')} — {p.get('name','')}" for p in profiles]
+            sel_p = st.selectbox("Select profile:", range(len(p_names)),
+                format_func=lambda i: p_names[i], key="prof_select")
+            pr = profiles[sel_p]
+            st.markdown(f"""
+            <div style="background:#f0fdf4;border-left:5px solid #16a34a;
+                 border-radius:12px;padding:20px 24px;margin:10px 0;">
+                <div style="font-size:1.2rem;font-weight:700;color:#1a5c45">
+                    👤 {pr.get('name','')}
+                </div>
+                <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;
+                     gap:8px;font-size:0.9rem;color:#374151;">
+                    <div>🎂 Age: {pr.get('age','')}</div>
+                    <div>⚧ Gender: {pr.get('gender','')}</div>
+                    <div>📞 Phone: {pr.get('phone','Not provided')}</div>
+                    <div>📍 City: {pr.get('city','')}</div>
+                    <div>🩸 Blood Type: {pr.get('blood_type','')}</div>
+                    <div>💊 Conditions: {str(pr.get('conditions',''))}</div>
+                    <div>📋 Medications: {pr.get('medications','None')}</div>
+                    <div>⚠️ Allergies: {pr.get('allergies','None')}</div>
+                    <div>🆘 Emergency Contact: {pr.get('emergency_contact','Not provided')}</div>
+                    <div>📅 Saved: {pr.get('saved_at','')}</div>
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+            st.markdown("#### 📋 All Profiles Table")
+            st.dataframe(df_p, use_container_width=True, height=280)
+            pc1, pc2 = st.columns(2)
+            with pc1:
+                st.download_button("📥 Download Profiles CSV",
+                    df_p.to_csv(index=False),
+                    "profiles.csv", "text/csv", key="adm_prof")
+            with pc2:
+                if st.button("🗑️ Clear Profiles", key="adm_clear_p"):
+                    if os.path.exists(PROFILES_FILE): os.remove(PROFILES_FILE)
+                    st.success("Profiles cleared!"); st.rerun()
         else:
-            st.info("No profiles saved yet.")
+            st.info("No profiles saved yet. Profiles appear here when users fill in My Profile tab.")
 
 st.markdown("---")
 st.caption("🌿 Khareef Health v3.3 · by Sadga Selime · Salalah, Oman · Powered by Google Gemini AI · Educational use only")
