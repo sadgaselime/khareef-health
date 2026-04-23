@@ -335,7 +335,6 @@ st.markdown(f"""
     </div>
   </div>
 
-  <!-- Animated dots decoration -->
   <div style="position:absolute;bottom:10px;left:0;right:0;display:flex;
        justify-content:center;gap:6px;opacity:0.3;">
     <div style="width:6px;height:6px;background:white;border-radius:50%;
