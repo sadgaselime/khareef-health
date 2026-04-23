@@ -149,7 +149,25 @@ st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Poppins:wght@400;600;700&display=swap');
 html,body,[class*="css"]{{font-family:'Poppins',sans-serif;}}
-.stApp{{background:linear-gradient(150deg,{T['l']} 0%,#f9fafb 60%,{T['l']} 100%) !important;}}
+
+/* ── Animated healthcare background ── */
+.stApp{{
+    background:linear-gradient(150deg,{T['l']} 0%,#f9fafb 60%,{T['l']} 100%) !important;
+    position:relative;
+}}
+
+/* Floating medical icons background pattern */
+.stApp::before{{
+    content:'';
+    position:fixed;
+    inset:0;
+    background-image:
+        radial-gradient(circle at 10% 20%, {T['p']}08 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, {T['s']}06 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, {T['p']}04 0%, transparent 60%);
+    pointer-events:none;
+    z-index:0;
+}}
 section[data-testid="stSidebar"]{{display:none;}}
 .app-header{{background:linear-gradient({T['g']});border-radius:20px;
     padding:28px 36px;margin-bottom:16px;color:white;
@@ -279,19 +297,58 @@ div.stButton > button:active{{
 # ══════════════════════════════════════
 g_emoji = "👨" if st.session_state.gender=="Male" else "👩" if st.session_state.gender=="Female" else "🌿"
 st.markdown(f"""
-<div class="app-header">
-  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-    <div style="font-size:3.5rem;line-height:1">{g_emoji}</div>
+<div class="app-header" style="position:relative;overflow:hidden;">
+
+  <!-- Decorative medical SVG icons in background -->
+  <svg style="position:absolute;top:-10px;right:20px;opacity:0.08;width:180px;height:180px;"
+       viewBox="0 0 200 200" fill="white">
+    <!-- Stethoscope shape -->
+    <circle cx="60" cy="140" r="18" stroke="white" stroke-width="6" fill="none"/>
+    <path d="M42 140 Q42 80 80 60 Q118 40 140 60 L140 90" stroke="white" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <circle cx="140" cy="100" r="12" fill="white" opacity="0.6"/>
+    <!-- Cross/plus -->
+    <rect x="150" y="30" width="8" height="30" rx="4" fill="white"/>
+    <rect x="140" y="40" width="30" height="8" rx="4" fill="white"/>
+    <!-- Heart -->
+    <path d="M20 30 C20 22 30 18 35 25 C40 18 50 22 50 30 C50 40 35 50 35 50 C35 50 20 40 20 30Z" fill="white" opacity="0.5"/>
+    <!-- Pills -->
+    <ellipse cx="170" cy="150" rx="14" ry="8" transform="rotate(-35 170 150)" stroke="white" stroke-width="5" fill="none"/>
+    <line x1="162" y1="145" x2="178" y2="155" stroke="white" stroke-width="3"/>
+  </svg>
+
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;position:relative;z-index:1;">
+    <div style="font-size:3.5rem;line-height:1;animation:float 3s ease-in-out infinite">{g_emoji}</div>
     <div style="flex:1;animation:slideInLeft 0.5s ease;">
-      <h1>Khareef Health</h1>
-      <div class="byline">by Sadga Selime</div>
-      <div class="sub">AI Telemedicine Triage · Salalah, Dhofar, Oman</div>
+      <h1 style="display:flex;align-items:center;gap:10px;">
+        Khareef Health
+        <span style="font-size:1rem;background:rgba(255,255,255,0.2);padding:3px 10px;
+              border-radius:99px;font-weight:400;letter-spacing:1px;">
+          AI POWERED
+        </span>
+      </h1>
+      <div class="byline">by Sadga Selime · Salalah, Dhofar, Oman 🇴🇲</div>
+      <div class="sub">
+        🩺 Triage &nbsp;|&nbsp; 📸 Skin Analysis &nbsp;|&nbsp;
+        💊 Medicine Scanner &nbsp;|&nbsp; 📊 Health Trends
+      </div>
       <div class="ar">مساعد الفرز الطبي الذكي · صلالة، ظفار، عُمان</div>
     </div>
-    <div style="text-align:right;">
-      <div style="font-size:0.85rem;opacity:0.8">📞 Emergency</div>
-      <div style="font-size:2rem;font-weight:700">999</div>
+    <div style="text-align:center;background:rgba(255,0,0,0.25);border-radius:14px;
+         padding:10px 20px;border:2px solid rgba(255,255,255,0.3);">
+      <div style="font-size:0.75rem;opacity:0.9;letter-spacing:1px">🚨 EMERGENCY</div>
+      <div style="font-size:2.2rem;font-weight:800;letter-spacing:2px">999</div>
     </div>
+  </div>
+
+  <!-- Animated dots decoration -->
+  <div style="position:absolute;bottom:10px;left:0;right:0;display:flex;
+       justify-content:center;gap:6px;opacity:0.3;">
+    <div style="width:6px;height:6px;background:white;border-radius:50%;
+         animation:float 2s ease-in-out infinite;"></div>
+    <div style="width:6px;height:6px;background:white;border-radius:50%;
+         animation:float 2.3s ease-in-out infinite;"></div>
+    <div style="width:6px;height:6px;background:white;border-radius:50%;
+         animation:float 2.6s ease-in-out infinite;"></div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -396,7 +453,7 @@ if not st.session_state.welcomed:
 
     st.stop()  # Don't show the rest of the app until welcomed
 
-tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, tab_skin, tab_research, tab_about = st.tabs([
+tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, tab_skin, tab_medscan, tab_research, tab_about = st.tabs([
     "👤 My Profile",
     "🩺 Health Check",
     "🚨 Emergency",
@@ -404,7 +461,8 @@ tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, t
     "👩 Women's Health",
     "🦠 Diseases",
     "📸 Skin Analysis",
-    "📊 Community Trends",
+    "💊📷 Medicine Scanner",
+    "📊 Health Trends",
     "ℹ️ About",
 ])
 
@@ -1735,6 +1793,215 @@ Format your response clearly with the numbered sections above."""
         </div>""", unsafe_allow_html=True)
 
 
+
+# ══════════════════════════════════════
+# MEDICINE SCANNER TAB
+# ══════════════════════════════════════
+with tab_medscan:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,#1e3a5f,#1a5c8a,#2d8abf);
+         border-radius:16px;padding:24px 32px;color:white;margin-bottom:20px;
+         box-shadow:0 8px 28px rgba(30,58,95,0.35);">
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div style="font-size:3rem;animation:float 3s ease-in-out infinite">💊</div>
+            <div>
+                <div style="font-size:1.5rem;font-weight:700">Medicine Scanner</div>
+                <div style="opacity:0.85">Take a photo of any medicine, label, or prescription</div>
+                <div style="opacity:0.7;font-size:0.88rem;margin-top:2px">
+                    AI will identify it and explain what it is, dose, and warnings
+                </div>
+            </div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown("""<div class="disclaimer">
+        ⚠️ Educational purposes only. Always follow your doctor's prescription.
+        Never change your medication based on AI advice alone.</div>""",
+        unsafe_allow_html=True)
+    st.markdown("")
+
+    # Ask type of question
+    scan_mode = st.radio("What do you want to do?", [
+        "📷 Scan medicine packet / label",
+        "📷 Scan prescription / doctor's note",
+        "❓ Ask a question about a medicine photo",
+    ], key="scan_mode")
+
+    ms_method = st.radio("Image source:",
+        ["📷 Take photo", "📁 Upload image"],
+        horizontal=True, key="ms_method")
+
+    ms_img = None
+    if ms_method == "📷 Take photo":
+        ms_cam = st.camera_input("Point camera at medicine", key="ms_camera")
+        if ms_cam: ms_img = ms_cam
+    else:
+        ms_up = st.file_uploader("Upload medicine image",
+            type=["jpg","jpeg","png","webp"], key="ms_upload")
+        if ms_up: ms_img = ms_up
+
+    # Optional question
+    user_question = st.text_input(
+        "Ask a specific question (optional):",
+        placeholder="e.g. Can I take this with metformin? Is this safe in pregnancy?",
+        key="ms_question"
+    )
+
+    if ms_img:
+        st.image(ms_img, caption="Medicine image", width=380)
+
+        if st.button("🔍 Analyze Medicine", type="primary",
+                use_container_width=True, key="ms_analyze"):
+
+            if not is_api_key_configured():
+                st.error("Gemini API key required.")
+            else:
+                with st.spinner("🤖 Reading and analyzing medicine..."):
+                    try:
+                        from google import genai as gv
+                        import PIL.Image, io
+
+                        client_ms = gv.Client(api_key=GEMINI_API_KEY)
+                        img_bytes  = ms_img.getvalue()
+                        pil_img    = PIL.Image.open(io.BytesIO(img_bytes))
+
+                        if scan_mode == "📷 Scan medicine packet / label":
+                            prompt_ms = f"""You are a helpful pharmacist AI assistant.
+Look at this medicine packaging or label carefully.
+
+Please provide:
+
+MEDICINE NAME:
+[Name of medicine as shown + generic name if visible]
+
+WHAT IT IS FOR:
+[What condition this medicine treats — simple language]
+
+ACTIVE INGREDIENT:
+[Main chemical/drug ingredient]
+
+DOSAGE:
+[Dose information shown on the label]
+
+HOW TO TAKE IT:
+[Instructions for taking it]
+
+WARNINGS:
+[Any warnings shown — allergies, side effects, interactions]
+
+STORAGE:
+[How to store it]
+
+EXPIRY:
+[Expiry date if visible]
+
+{f"ANSWER THIS QUESTION: {user_question}" if user_question else ""}
+
+IMPORTANT: If you cannot read the medicine clearly, say so.
+Always end with: "Consult your pharmacist or doctor before taking any medication."
+Keep language simple and clear. This is for patients in Salalah, Oman."""
+
+                        elif scan_mode == "📷 Scan prescription / doctor's note":
+                            prompt_ms = f"""You are a helpful medical assistant.
+Look at this prescription or doctor's note carefully.
+
+Please provide:
+
+MEDICINES PRESCRIBED:
+[List each medicine name]
+
+WHAT EACH IS FOR:
+[Brief explanation of each medicine's purpose]
+
+DOSAGE INSTRUCTIONS:
+[How and when to take each]
+
+DURATION:
+[How long to take them if shown]
+
+IMPORTANT NOTES:
+[Any special instructions]
+
+{f"ANSWER THIS QUESTION: {user_question}" if user_question else ""}
+
+If you cannot read handwriting clearly, say which parts are unclear.
+Always recommend confirming with the prescribing doctor.
+Keep language very simple for patients."""
+
+                        else:
+                            prompt_ms = f"""You are a knowledgeable pharmacist AI.
+Look at this medicine image and answer the patient's question.
+
+Patient question: {user_question if user_question else "What is this medicine and what is it used for?"}
+
+Provide a clear, simple answer based on what you can see in the image.
+Include any relevant safety information.
+Keep language simple — this is for patients in Salalah, Oman.
+End with: "Please confirm with your pharmacist or doctor." """
+
+                        response_ms = client_ms.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=[prompt_ms, pil_img]
+                        )
+                        analysis_ms = response_ms.text.strip()
+
+                        st.markdown("---")
+                        st.markdown("### 🤖 Medicine Analysis")
+
+                        # Display in nice card
+                        st.markdown(f"""
+                        <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);
+                             border-radius:14px;padding:22px 26px;
+                             border-left:5px solid #2563eb;margin:12px 0;">
+                            <div style="white-space:pre-line;font-size:0.95rem;
+                                 color:#1e3a8a;line-height:1.8;">
+                                {analysis_ms}
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+
+                        st.warning(
+                            "⚠️ This is AI-generated information for educational purposes. "
+                            "Always follow your doctor's or pharmacist's instructions."
+                        )
+
+                    except ImportError:
+                        st.error("Pillow library required. Check requirements.txt")
+                    except Exception as e:
+                        st.error(f"Scan failed: {str(e)}")
+    else:
+        # Show visual guide
+        st.markdown("""
+        <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);
+             border:2px dashed #2563eb;border-radius:16px;
+             padding:32px;text-align:center;">
+            <div style="font-size:4rem;animation:float 3s ease-in-out infinite">💊</div>
+            <div style="font-size:1.1rem;font-weight:700;color:#1e40af;margin:10px 0">
+                Take or upload a photo of any medicine</div>
+            <div style="color:#1e3a8a;font-size:0.9rem;margin-top:8px">
+                📦 Medicine packets &nbsp;·&nbsp; 🏷️ Labels &nbsp;·&nbsp;
+                📋 Prescriptions &nbsp;·&nbsp; 💊 Tablets/capsules
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 💡 Tips for Best Results")
+    t1, t2, t3 = st.columns(3)
+    with t1:
+        st.markdown("""<div class="step">
+            📱 <b>Good lighting</b><br>
+            Take photo in bright light. Avoid shadows on the label.
+        </div>""", unsafe_allow_html=True)
+    with t2:
+        st.markdown("""<div class="step">
+            🔍 <b>Focus on text</b><br>
+            Make sure medicine name and dose are clearly visible.
+        </div>""", unsafe_allow_html=True)
+    with t3:
+        st.markdown("""<div class="step">
+            📋 <b>Flat surface</b><br>
+            Place the medicine flat and photograph straight down.
+        </div>""", unsafe_allow_html=True)
+
 # ══════════════════════════════════════
 # TAB 8 — COMMUNITY TRENDS & RESEARCH
 # ══════════════════════════════════════
@@ -1908,6 +2175,191 @@ with tab_research:
             st.bar_chart(city_counts.set_index("City"), color="#1a5c45", height=250)
         with cc2:
             st.dataframe(city_counts, use_container_width=True, height=250)
+
+    st.markdown("---")
+
+    # ── CURRENT DISEASE OUTBREAKS & ALERTS ──
+    st.markdown("### 🚨 Current Health Alerts & Disease Trends")
+    st.caption("AI-curated health intelligence based on global and regional data")
+
+    alert_tabs = st.tabs([
+        "🌍 Global Alerts", "🇴🇲 Oman & Gulf", "🫁 Respiratory", "🦠 Infectious", "💊 New Treatments"
+    ])
+
+    with alert_tabs[0]:
+        st.markdown("#### 🌍 Global Health Alerts (2025-2026)")
+        global_alerts = [
+            {
+                "name": "HMPV (Human Metapneumovirus)",
+                "status": "🟡 ELEVATED",
+                "color": "#d97706",
+                "bg": "#fef9c3",
+                "overview": "Respiratory virus causing flu-like illness. Surge reported in China, India and spreading globally. Affects elderly and children most severely.",
+                "symptoms": "Cough, fever, shortness of breath, runny nose",
+                "prevention": "Handwashing, masks in crowded areas, avoid close contact with sick people",
+                "who_at_risk": "Children under 5, adults over 65, immunocompromised",
+                "khareef": "Humidity may increase respiratory susceptibility during Khareef",
+            },
+            {
+                "name": "COVID-19 JN.1 / KP Variants",
+                "status": "🟡 ACTIVE",
+                "color": "#d97706",
+                "bg": "#fef9c3",
+                "overview": "New subvariants continue circulating globally. Generally milder but still dangerous for high-risk groups. Vaccines still protective against severe disease.",
+                "symptoms": "Fever, cough, fatigue, sore throat, loss of taste/smell",
+                "prevention": "Vaccination booster, masks indoors, ventilation",
+                "who_at_risk": "Unvaccinated, elderly, immunocompromised, heart/lung disease",
+                "khareef": "Indoor gatherings during Khareef increase transmission risk",
+            },
+            {
+                "name": "Mpox (Monkeypox)",
+                "status": "🟠 WATCH",
+                "color": "#ea580c",
+                "bg": "#fff7ed",
+                "overview": "WHO declared global health emergency. New clade spreading. Travel-related cases reported in Middle East. Oman health authorities monitoring.",
+                "symptoms": "Fever, rash, swollen lymph nodes, painful skin lesions",
+                "prevention": "Avoid close contact with infected persons, vaccination available",
+                "who_at_risk": "Close contacts of infected persons, healthcare workers",
+                "khareef": "Monitor travellers returning from affected regions",
+            },
+        ]
+
+        for alert in global_alerts:
+            st.markdown(f"""
+            <div style="background:{alert['bg']};border-left:5px solid {alert['color']};
+                 border-radius:12px;padding:18px 22px;margin:10px 0;
+                 animation:fadeUp 0.4s ease;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <div style="font-size:1.1rem;font-weight:700;color:{alert['color']}">
+                        {alert['name']}</div>
+                    <span style="background:{alert['color']};color:white;padding:3px 12px;
+                          border-radius:99px;font-size:0.82rem;font-weight:700">
+                        {alert['status']}</span>
+                </div>
+                <div style="margin-top:10px;font-size:0.9rem;color:#374151;line-height:1.7">
+                    <b>Overview:</b> {alert['overview']}<br>
+                    <b>Symptoms:</b> {alert['symptoms']}<br>
+                    <b>Prevention:</b> {alert['prevention']}<br>
+                    <b>High Risk:</b> {alert['who_at_risk']}<br>
+                    <span style="color:#d97706"><b>🌦️ Khareef Note:</b> {alert['khareef']}</span>
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+    with alert_tabs[1]:
+        st.markdown("#### 🇴🇲 Health Trends — Oman & Gulf Region")
+        oman_alerts = [
+            {
+                "name": "Dengue Fever — Seasonal Rise",
+                "status": "🟠 ELEVATED IN SEASON",
+                "color":"#ea580c","bg":"#fff7ed",
+                "detail": "Dengue cases increase during and after rainy season. Salalah's Khareef creates mosquito breeding conditions. Aedes mosquito active during daytime.",
+                "action": "Eliminate standing water, use repellent, wear long sleeves outdoors",
+            },
+            {
+                "name": "Heat Stroke & Heat Exhaustion",
+                "status": "🔴 HIGH RISK MAY-SEP",
+                "color":"#dc2626","bg":"#fee2e2",
+                "detail": "Extreme temperatures in Oman May-September. Humidity in Dhofar adds additional risk. Elderly and outdoor workers most affected.",
+                "action": "Stay hydrated, avoid midday sun, wear light clothing, check on elderly neighbors",
+            },
+            {
+                "name": "Respiratory Infections (Khareef)",
+                "status": "🟡 SEASONAL",
+                "color":"#d97706","bg":"#fef9c3",
+                "detail": "Fungal spores, mold, and increased humidity during Khareef trigger asthma, allergies, and respiratory infections. Tourist influx brings new pathogens.",
+                "action": "Keep windows closed at night, use air purifier, carry Ventolin inhaler",
+            },
+            {
+                "name": "Diabetes & Hypertension",
+                "status": "🔴 CHRONIC HIGH BURDEN",
+                "color":"#dc2626","bg":"#fee2e2",
+                "detail": "Oman has one of the highest rates of diabetes and hypertension in the world. Strongly linked to dietary patterns and sedentary lifestyle.",
+                "action": "Regular screening, reduce sugar and salt, walk 30 min daily",
+            },
+        ]
+        for a in oman_alerts:
+            st.markdown(f"""
+            <div style="background:{a['bg']};border-left:5px solid {a['color']};
+                 border-radius:12px;padding:16px 20px;margin:8px 0;">
+                <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                    <div style="font-weight:700;color:{a['color']}">{a['name']}</div>
+                    <span style="background:{a['color']};color:white;padding:2px 10px;
+                          border-radius:99px;font-size:0.8rem">{a['status']}</span>
+                </div>
+                <div style="margin-top:8px;font-size:0.88rem;color:#374151;line-height:1.7">
+                    {a['detail']}<br><b>Action:</b> {a['action']}
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+    with alert_tabs[2]:
+        st.markdown("#### 🫁 Respiratory Disease Trends 2025-2026")
+        st.info("""
+**Top Respiratory Threats Currently:**
+
+🦠 **HMPV** — Surging globally. No vaccine yet. Treat like flu.
+
+🫁 **Mycoplasma Pneumoniae** — "Walking pneumonia" rising in children and young adults.
+Responds to azithromycin antibiotic (prescription required).
+
+😤 **Asthma + COPD flares** — Climate change worsening seasonal triggers worldwide.
+Salalah particularly affected by Khareef humidity changes.
+
+🤧 **RSV (Respiratory Syncytial Virus)** — Now circulating year-round not just in winter.
+New vaccine available for adults over 60 and infants.
+
+💊 **New Treatments:**
+- RSV vaccine (Abrysvo/Arexvy) — ask your doctor
+- COVID antivirals (Paxlovid) — available for high-risk patients
+- Nirsevimab — new RSV antibody for infants
+        """)
+
+    with alert_tabs[3]:
+        st.markdown("#### 🦠 Infectious Disease Watch 2025-2026")
+        infectious = [
+            ("🦠 HMPV", "Emerging", "Flu-like respiratory illness, no specific treatment"),
+            ("🦟 West Nile Virus", "Regional Watch", "Mosquito-borne, neurological complications in elderly"),
+            ("🤧 Influenza H5N1 (Bird Flu)", "Global Monitor", "Bird-to-human cases increasing. No sustained human spread yet."),
+            ("🫁 TB (Tuberculosis)", "Ongoing", "Drug-resistant TB rising globally. Oman has screening programs."),
+            ("🦠 Norovirus", "Seasonal Rise", "Gastroenteritis outbreaks in crowded tourist areas during Khareef"),
+            ("🩸 Hepatitis E", "Watch", "Waterborne — linked to flooding and poor sanitation"),
+        ]
+        for name, status, detail in infectious:
+            color = "#dc2626" if "Emerging" in status else "#d97706" if "Watch" in status else "#1a5c45"
+            st.markdown(f"""
+            <div class="step" style="margin:6px 0;">
+                <div style="display:flex;justify-content:space-between;flex-wrap:wrap;">
+                    <b>{name}</b>
+                    <span style="color:{color};font-size:0.82rem;font-weight:700">{status}</span>
+                </div>
+                <div style="font-size:0.88rem;color:#6b7280;margin-top:4px">{detail}</div>
+            </div>""", unsafe_allow_html=True)
+
+    with alert_tabs[4]:
+        st.markdown("#### 💊 New Treatments & Medical Advances 2025-2026")
+        st.success("""
+**Exciting new developments in healthcare:**
+
+🩸 **GLP-1 Medications (Ozempic/Wegovy)** — Now proven to reduce heart attack risk by 20%
+in addition to weight loss. Shortage easing globally.
+
+❤️ **Dapagliflozin (Forxiga)** — Originally a diabetes drug. Now approved for heart failure
+AND chronic kidney disease. Changing treatment worldwide.
+
+🧠 **Alzheimer's — Lecanemab (Leqembi)** — First drug to slow Alzheimer's progression.
+Now available in some countries. Significant milestone.
+
+💉 **mRNA Vaccines** — Technology used for COVID now being applied to:
+cancer vaccines, RSV, HIV, influenza, and more.
+
+🫁 **RSV Vaccines** — First ever adult RSV vaccine approved 2024.
+Recommended for adults 60+ — ask your doctor.
+
+🩺 **AI Diagnostics** — AI now matching specialist-level accuracy in:
+diabetic retinopathy, skin cancer, chest X-rays, ECG interpretation.
+
+💊 **Affordable Insulin** — Generic insulin now available at much lower cost in many countries.
+Important for diabetic patients in Oman.
+        """)
 
     st.markdown("---")
 
