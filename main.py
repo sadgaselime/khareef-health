@@ -12,6 +12,7 @@ from datetime import datetime
 from data import Patient, validate_patient_input, normalize_symptoms, log_patient, get_session_log
 from triage import assess_patient
 from gemini_helper import get_gemini_advice, is_api_key_configured, get_api_key_status
+from diseases import DISEASES, CATEGORIES, search_diseases, get_by_category
 
 st.set_page_config(
     page_title="Khareef Health",
@@ -194,12 +195,13 @@ st.markdown("---")
 # ══════════════════════════════════════
 # MAIN TABS
 # ══════════════════════════════════════
-tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_history, tab_about = st.tabs([
+tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, tab_history, tab_about = st.tabs([
     "👤 My Profile",
     "🩺 Health Check",
     "🚨 Emergency",
     "💊 Medicines",
     "👩 Women's Health",
+    "🦠 Diseases",
     "📊 History",
     "ℹ️ About",
 ])
@@ -1125,8 +1127,152 @@ with tab_women:
 💚 **Your health matters. Never delay seeking help.**
         """)
 
+
 # ══════════════════════════════════════
-# TAB 6 — HISTORY
+# TAB 6 — DISEASE ENCYCLOPEDIA
+# ══════════════════════════════════════
+with tab_diseases:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,#1e3a5f,#2d6fba);border-radius:16px;
+         padding:20px 28px;color:white;text-align:center;margin-bottom:20px;">
+        <div style="font-size:2rem">🦠</div>
+        <div style="font-size:1.4rem;font-weight:700">Disease Encyclopedia</div>
+        <div style="opacity:0.85">موسوعة الأمراض</div>
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown("""<div class="disclaimer">
+        ⚠️ This is general health education only. Always consult a qualified doctor
+        for diagnosis and treatment.</div>""", unsafe_allow_html=True)
+    st.markdown("")
+
+    # Search and filter
+    d_col1, d_col2 = st.columns([2, 1])
+    with d_col1:
+        search_q = st.text_input("🔍 Search disease (English or Arabic):",
+            placeholder="e.g. diabetes, السكري, COVID...", key="dis_search")
+    with d_col2:
+        cat_filter = st.selectbox("Filter by category:",
+            ["All Categories"] + CATEGORIES, key="dis_cat")
+
+    # Get filtered diseases
+    if search_q.strip():
+        filtered = search_diseases(search_q)
+    elif cat_filter != "All Categories":
+        filtered = get_by_category(cat_filter)
+    else:
+        filtered = DISEASES
+
+    if not filtered:
+        st.warning("No diseases found. Try a different search term.")
+    else:
+        # Show disease count
+        st.caption(f"Showing {len(filtered)} disease(s)")
+
+        # Disease selector
+        disease_names = list(filtered.keys())
+        selected_disease = st.selectbox(
+            "Select a disease to view full information:",
+            disease_names,
+            format_func=lambda x: f"{filtered[x]['emoji']} {x}  —  {filtered[x]['category']}",
+            key="dis_select"
+        )
+
+        if selected_disease:
+            d = filtered[selected_disease]
+            st.markdown("---")
+
+            # Disease header
+            contagious_badge = "🔴 Contagious" if d["is_contagious"] else "✅ Not contagious"
+            genetic_badge    = "🧬 Has genetic component" if d["is_genetic"] else "❌ Not genetic"
+            st.markdown(f"""
+            <div style="background:linear-gradient(135deg,{T['l']},white);
+                 border-radius:16px;padding:24px;border:2px solid {T['p']}33;margin-bottom:16px;">
+                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                    <div style="font-size:3.5rem;line-height:1">{d['emoji']}</div>
+                    <div style="flex:1;">
+                        <div style="font-size:1.6rem;font-weight:700;color:{T['p']}">{selected_disease}</div>
+                        <div style="font-size:0.9rem;color:#6b7280;margin-top:4px">
+                            Also known as: {d['also_known_as']}</div>
+                        <div style="font-family:'Tajawal',sans-serif;font-size:1rem;
+                             color:{T['s']};margin-top:4px">{d['arabic_name']}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px;text-align:right;">
+                        <span style="background:{'#fee2e2' if d['is_contagious'] else '#dcfce7'};
+                            color:{'#dc2626' if d['is_contagious'] else '#16a34a'};
+                            padding:4px 12px;border-radius:99px;font-size:0.82rem;font-weight:600">
+                            {contagious_badge}</span>
+                        <span style="background:{'#ede9fe' if d['is_genetic'] else '#f3f4f6'};
+                            color:{'#7c3aed' if d['is_genetic'] else '#6b7280'};
+                            padding:4px 12px;border-radius:99px;font-size:0.82rem;font-weight:600">
+                            {genetic_badge}</span>
+                        <span style="background:{T['l']};color:{T['p']};
+                            padding:4px 12px;border-radius:99px;font-size:0.82rem;font-weight:600">
+                            📂 {d['category']}</span>
+                    </div>
+                </div>
+                <div style="margin-top:14px;font-size:0.95rem;color:#374151;line-height:1.7">
+                    {d['overview']}</div>
+            </div>""", unsafe_allow_html=True)
+
+            # Recovery time
+            st.info(f"⏱️ **Recovery Time:** {d['recovery_time']}")
+
+            # Khareef connection
+            if d.get("khareef_connection"):
+                st.warning(f"🌦️ **Khareef Season Note:** {d['khareef_connection']}")
+
+            st.markdown("---")
+
+            # Main info in tabs
+            dt1, dt2, dt3, dt4, dt5, dt6 = st.tabs([
+                "🔬 How It Occurs",
+                "🤒 Symptoms",
+                "⚠️ High Risk Groups",
+                "🛡️ Prevention",
+                "💊 Treatment",
+                "🚨 When to Seek Help",
+            ])
+
+            with dt1:
+                st.markdown(f"### 🔬 How Does It Occur?")
+                st.info(f"**Type:** {d['how_it_occurs']}")
+                for item in d["transmission"]:
+                    st.markdown(f'<div class="step">{item}</div>', unsafe_allow_html=True)
+
+            with dt2:
+                st.markdown("### 🤒 Symptoms / الأعراض")
+                for s in d["symptoms"]:
+                    color = "step-red" if "🔴" in s or "Severe" in s else "step"
+                    st.markdown(f'<div class="{color}">{s}</div>', unsafe_allow_html=True)
+
+            with dt3:
+                st.markdown("### ⚠️ Who Is Most at Risk?")
+                for g in d["high_risk_groups"]:
+                    st.markdown(f'<div class="step-red">{g}</div>', unsafe_allow_html=True)
+
+            with dt4:
+                st.markdown("### 🛡️ Prevention / الوقاية")
+                for p in d["prevention"]:
+                    st.markdown(f'<div class="step">{p}</div>', unsafe_allow_html=True)
+
+            with dt5:
+                st.markdown("### 💊 Treatment / العلاج")
+                for t in d["treatment"]:
+                    st.markdown(f'<div class="step">{t}</div>', unsafe_allow_html=True)
+
+            with dt6:
+                st.markdown("### 🚨 When to Seek Medical Help")
+                st.error("**Go to hospital or call 999 if you experience:**")
+                for w in d["when_to_seek_help"]:
+                    st.markdown(f'<div class="step-red">⚠️ {w}</div>', unsafe_allow_html=True)
+                st.markdown("")
+                st.info("**Sultan Qaboos Hospital Salalah**
+📞 Emergency: 999 · +968 23 218 000")
+                st.link_button("📍 Open in Google Maps",
+                    "https://maps.google.com/?q=Sultan+Qaboos+Hospital+Salalah+Oman")
+
+# ══════════════════════════════════════
+# TAB 7 — HISTORY
 # ══════════════════════════════════════
 with tab_history:
     st.markdown("### 📊 All User Records")
@@ -1170,7 +1316,7 @@ with tab_history:
     else: st.caption("No profiles saved yet")
 
 # ══════════════════════════════════════
-# TAB 7 — ABOUT
+# TAB 8 — ABOUT
 # ══════════════════════════════════════
 with tab_about:
     ab1,ab2=st.columns(2)
