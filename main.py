@@ -12,17 +12,67 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── Mobile PWA meta tags + Custom Icon ────────────
-st.markdown("""
+# ── Full PWA Override ────────────────────────────
+ICON_512 = "https://raw.githubusercontent.com/sadgaselime/khareef-health/main/icon-512.png"
+ICON_192 = "https://raw.githubusercontent.com/sadgaselime/khareef-health/main/icon-192.png"
+ICON_180 = "https://raw.githubusercontent.com/sadgaselime/khareef-health/main/apple-touch-icon.png"
+
+st.markdown(f"""
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<!-- Viewport -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- PWA name and theme -->
+<meta name="application-name" content="Khareef Health">
+<meta name="theme-color" content="#1a5c45">
+
+<!-- iOS specific — MUST have these for iPhone home screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Khareef Health">
-<meta name="theme-color" content="#1a5c45">
-<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/sadgaselime/khareef-health/main/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="512x512" href="https://raw.githubusercontent.com/sadgaselime/khareef-health/main/icon-512.png">
-<link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/sadgaselime/khareef-health/main/icon-192.png">
+<link rel="apple-touch-icon" href="{ICON_180}">
+<link rel="apple-touch-icon" sizes="152x152" href="{ICON_192}">
+<link rel="apple-touch-icon" sizes="180x180" href="{ICON_180}">
+<link rel="apple-touch-icon" sizes="167x167" href="{ICON_192}">
+
+<!-- Android / Chrome PWA manifest (inline) -->
+<link rel="manifest" href="data:application/manifest+json,{{
+  &quot;name&quot;: &quot;Khareef Health&quot;,
+  &quot;short_name&quot;: &quot;Khareef&quot;,
+  &quot;description&quot;: &quot;AI Telemedicine Triage - Salalah, Oman&quot;,
+  &quot;start_url&quot;: &quot;/&quot;,
+  &quot;display&quot;: &quot;standalone&quot;,
+  &quot;background_color&quot;: &quot;#1a5c45&quot;,
+  &quot;theme_color&quot;: &quot;#1a5c45&quot;,
+  &quot;orientation&quot;: &quot;portrait&quot;,
+  &quot;icons&quot;: [
+    {{&quot;src&quot;: &quot;{ICON_192}&quot;, &quot;sizes&quot;: &quot;192x192&quot;, &quot;type&quot;: &quot;image/png&quot;, &quot;purpose&quot;: &quot;any maskable&quot;}},
+    {{&quot;src&quot;: &quot;{ICON_512}&quot;, &quot;sizes&quot;: &quot;512x512&quot;, &quot;type&quot;: &quot;image/png&quot;, &quot;purpose&quot;: &quot;any maskable&quot;}}
+  ]
+}}">
+
+<!-- Override favicon -->
+<link rel="icon" type="image/png" sizes="512x512" href="{ICON_512}">
+<link rel="icon" type="image/png" sizes="192x192" href="{ICON_192}">
+<link rel="shortcut icon" href="{ICON_512}">
+
+<!-- Override page title -->
+<title>Khareef Health</title>
+
+<script>
+// Override document title to prevent Streamlit from changing it
+Object.defineProperty(document, 'title', {{
+    get: function() {{ return 'Khareef Health'; }},
+    set: function() {{ document.getElementsByTagName('title')[0].textContent = 'Khareef Health'; }}
+}});
+document.title = 'Khareef Health';
+// Keep overriding every second
+setInterval(function() {{
+    if(document.title !== 'Khareef Health') {{
+        document.title = 'Khareef Health';
+    }}
+}}, 500);
+</script>
 </head>
 """, unsafe_allow_html=True)
 
