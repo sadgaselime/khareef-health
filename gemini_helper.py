@@ -112,7 +112,7 @@ ARABIC:
 """
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         response = model.generate_content(prompt)
         full_text = response.text.strip()
 
@@ -237,7 +237,7 @@ WHAT TO DO NEXT:
 
     try:
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.0-flash",
             generation_config=genai.GenerationConfig(
                 temperature=0.3,
                 max_output_tokens=800,
