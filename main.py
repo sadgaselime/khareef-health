@@ -207,14 +207,12 @@ st.markdown(f"""
 # ══════════════════════════════════════
 # SETTINGS BAR — replaces sidebar
 # ══════════════════════════════════════
-st.markdown("#### ⚙️ Settings")
-s1, s2, s3, s4, s5 = st.columns([1.2, 1, 1, 1, 1.5])
 
 st.markdown("#### ⚙️ Settings")
 s1, s2, s3, s4, s5 = st.columns([1.2, 1, 1, 1, 1.5])
 
 with s1:
-    gender = st.selectbox("🎨 Gender Theme / اختر الثيم", ["Not specified","Male","Female"],
+    gender = st.selectbox("🎨 Gender / اختر الثيم", ["Not specified","Male","Female"],
         index=["Not specified","Male","Female"].index(st.session_state.gender),
         key="main_gender")
 
