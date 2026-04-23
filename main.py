@@ -49,6 +49,44 @@ def save_profile(p):
     if not found: d.append(p)
     save_json(PROFILES_FILE, d)
 
+
+# ══════════════════════════════════════
+# VISITOR TRACKING
+# Records every visit automatically
+# ══════════════════════════════════════
+VISITORS_FILE = "visitors.json"
+
+def log_visitor():
+    """Logs every app visit with timestamp."""
+    try:
+        visitors = load_json(VISITORS_FILE)
+        visit = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "date":      datetime.now().strftime("%Y-%m-%d"),
+            "time":      datetime.now().strftime("%H:%M"),
+        }
+        visitors.append(visit)
+        save_json(VISITORS_FILE, visitors)
+    except Exception:
+        pass
+
+def get_visitor_stats():
+    visitors = load_json(VISITORS_FILE)
+    if not visitors:
+        return {"total": 0, "today": 0, "by_date": {}}
+    today = datetime.now().strftime("%Y-%m-%d")
+    today_visits  = sum(1 for v in visitors if v.get("date") == today)
+    by_date = {}
+    for v in visitors:
+        d = v.get("date", "unknown")
+        by_date[d] = by_date.get(d, 0) + 1
+    return {"total": len(visitors), "today": today_visits, "by_date": by_date}
+
+# Track this visit (runs every time app loads)
+if "visit_logged" not in st.session_state:
+    log_visitor()
+    st.session_state.visit_logged = True
+
 # ══════════════════════════════════════
 # SESSION STATE — gender MUST be set before CSS
 # ══════════════════════════════════════
@@ -195,14 +233,13 @@ st.markdown("---")
 # ══════════════════════════════════════
 # MAIN TABS
 # ══════════════════════════════════════
-tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, tab_history, tab_about = st.tabs([
+tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, tab_about = st.tabs([
     "👤 My Profile",
     "🩺 Health Check",
     "🚨 Emergency",
     "💊 Medicines",
     "👩 Women's Health",
     "🦠 Diseases",
-    "📊 History",
     "ℹ️ About",
 ])
 
@@ -1373,50 +1410,6 @@ with tab_diseases:
                     "https://maps.google.com/?q=Sultan+Qaboos+Hospital+Salalah+Oman")
 
 # ══════════════════════════════════════
-# TAB 7 — HISTORY
-# ══════════════════════════════════════
-with tab_history:
-    st.markdown("### 📊 All User Records")
-    records = load_json(RECORDS_FILE)
-    if records:
-        df = pd.DataFrame(records).sort_values("timestamp",ascending=False)
-        s1,s2,s3,s4 = st.columns(4)
-        s1.metric("Total",     len(df))
-        s2.metric("🟢 Green",  len(df[df["triage_level"]=="GREEN"]))
-        s3.metric("🟡 Yellow", len(df[df["triage_level"]=="YELLOW"]))
-        s4.metric("🔴 Red",    len(df[df["triage_level"]=="RED"]))
-        st.markdown("---")
-        search = st.text_input("Search by name:", key="hist_s")
-        if search: df=df[df["name"].str.contains(search,case=False,na=False)]
-        fltr = st.multiselect("Filter level:",["GREEN","YELLOW","RED"],
-            default=["GREEN","YELLOW","RED"],key="hist_f")
-        if fltr: df=df[df["triage_level"].isin(fltr)]
-        st.dataframe(df,use_container_width=True,height=380)
-        c1,c2=st.columns(2)
-        with c1:
-            st.download_button("📥 CSV",df.to_csv(index=False),"records.csv","text/csv",key="dl_c")
-        with c2:
-            st.download_button("📥 JSON",
-                json.dumps(records,indent=2,ensure_ascii=False),
-                "records.json","application/json",key="dl_j")
-        st.markdown("---")
-        if st.button("🗑️ Clear Records",key="clr"):
-            if os.path.exists(RECORDS_FILE): os.remove(RECORDS_FILE)
-            st.success("Cleared!"); st.rerun()
-    else:
-        st.info("No records yet.")
-
-    st.markdown("---")
-    st.markdown("### Saved Profiles")
-    profiles = load_json(PROFILES_FILE)
-    if profiles:
-        st.dataframe(pd.DataFrame(profiles),use_container_width=True)
-        st.download_button("📥 Download Profiles",
-            pd.DataFrame(profiles).to_csv(index=False),
-            "profiles.csv","text/csv",key="dl_p2")
-    else: st.caption("No profiles saved yet")
-
-# ══════════════════════════════════════
 # TAB 8 — ABOUT
 # ══════════════════════════════════════
 with tab_about:
@@ -1454,6 +1447,113 @@ Named after Salalah's **Khareef** monsoon season.
         ⚠️ For educational purposes only. NOT a substitute for professional medical advice.
         Always consult a licensed doctor. Emergency: <strong>999</strong>
     </div>""", unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════
+# HIDDEN ADMIN PANEL
+# Only visible at: your-app-url/?admin=true
+# Then enter password to unlock
+# ══════════════════════════════════════
+
+# Check for secret admin URL parameter
+query_params = st.query_params
+is_admin_url  = query_params.get("admin", "") == "true"
+
+if is_admin_url:
+    st.markdown("---")
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,#0d3d29,#1a5c45);border-radius:16px;
+         padding:20px 28px;color:white;text-align:center;margin-bottom:20px;">
+        <div style="font-size:2rem">🔐</div>
+        <div style="font-size:1.3rem;font-weight:700">Admin Dashboard</div>
+        <div style="opacity:0.75;font-size:0.85rem">Private — Sadga Selime only</div>
+    </div>""", unsafe_allow_html=True)
+
+    # ── PASSWORD CHECK ──
+    if "admin_unlocked" not in st.session_state:
+        st.session_state.admin_unlocked = False
+
+    if not st.session_state.admin_unlocked:
+        admin_pass = st.text_input("Admin Password:", type="password", key="adm_pass")
+        if st.button("🔓 Login", key="adm_login"):
+            # ⚠️ CHANGE THIS TO YOUR OWN SECRET PASSWORD
+            if admin_pass == "Sadga@Khareef2026":
+                st.session_state.admin_unlocked = True
+                st.rerun()
+            else:
+                st.error("❌ Wrong password.")
+    else:
+        st.success("✅ Welcome, Sadga Selime!")
+        if st.button("🔒 Logout", key="adm_logout"):
+            st.session_state.admin_unlocked = False
+            st.rerun()
+
+        # ── VISITOR STATS ──
+        st.markdown("### 👥 Visitor Statistics")
+        stats = get_visitor_stats()
+        v1, v2 = st.columns(2)
+        v1.metric("🌍 Total Visits", stats["total"])
+        v2.metric("📅 Today's Visits", stats["today"])
+
+        if stats["by_date"]:
+            st.markdown("**Visits by Date:**")
+            df_visitors = pd.DataFrame([
+                {"Date": d, "Visits": c}
+                for d, c in sorted(stats["by_date"].items(), reverse=True)
+            ])
+            st.dataframe(df_visitors, use_container_width=True, height=250)
+            st.download_button("📥 Download Visitor Log",
+                pd.DataFrame(load_json(VISITORS_FILE)).to_csv(index=False),
+                "visitors.csv", "text/csv", key="dl_vis")
+
+        st.markdown("---")
+
+        # ── USER RECORDS ──
+        st.markdown("### 📋 All User Assessment Records")
+        records = load_json(RECORDS_FILE)
+        if records:
+            df_r = pd.DataFrame(records).sort_values("timestamp", ascending=False)
+            s1,s2,s3,s4 = st.columns(4)
+            s1.metric("Total Checks",  len(df_r))
+            s2.metric("🟢 Green",  len(df_r[df_r["triage_level"]=="GREEN"]))
+            s3.metric("🟡 Yellow", len(df_r[df_r["triage_level"]=="YELLOW"]))
+            s4.metric("🔴 Red",    len(df_r[df_r["triage_level"]=="RED"]))
+
+            search = st.text_input("Search by name:", key="adm_search")
+            if search:
+                df_r = df_r[df_r["name"].str.contains(search, case=False, na=False)]
+
+            st.dataframe(df_r, use_container_width=True, height=380)
+            ac1, ac2 = st.columns(2)
+            with ac1:
+                st.download_button("📥 Download CSV",
+                    df_r.to_csv(index=False), "records.csv", "text/csv", key="adm_csv")
+            with ac2:
+                st.download_button("📥 Download JSON",
+                    json.dumps(records, indent=2, ensure_ascii=False),
+                    "records.json", "application/json", key="adm_json")
+
+            if st.button("🗑️ Clear Records", key="adm_clear_r"):
+                if os.path.exists(RECORDS_FILE): os.remove(RECORDS_FILE)
+                st.success("Records cleared!"); st.rerun()
+        else:
+            st.info("No assessment records yet.")
+
+        st.markdown("---")
+
+        # ── SAVED PROFILES ──
+        st.markdown("### 👤 All Saved Profiles")
+        profiles = load_json(PROFILES_FILE)
+        if profiles:
+            st.dataframe(pd.DataFrame(profiles), use_container_width=True)
+            st.download_button("📥 Download Profiles",
+                pd.DataFrame(profiles).to_csv(index=False),
+                "profiles.csv", "text/csv", key="adm_prof")
+            if st.button("🗑️ Clear Profiles", key="adm_clear_p"):
+                if os.path.exists(PROFILES_FILE): os.remove(PROFILES_FILE)
+                st.success("Profiles cleared!"); st.rerun()
+        else:
+            st.info("No profiles saved yet.")
 
 st.markdown("---")
 st.caption("🌿 Khareef Health v3.3 · by Sadga Selime · Salalah, Oman · Powered by Google Gemini AI · Educational use only")
