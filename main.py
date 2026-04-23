@@ -190,6 +190,87 @@ section[data-testid="stSidebar"]{{display:none;}}
 .stTabs [data-baseweb="tab"]{{border-radius:10px;font-weight:600;font-size:0.82rem;padding:7px 12px;}}
 .stTabs [aria-selected="true"]{{background:{T['p']} !important;color:white !important;}}
 #MainMenu{{visibility:hidden;}}footer{{visibility:hidden;}}header{{visibility:hidden;}}
+
+/* ── Animations ── */
+@keyframes fadeUp{{
+    from{{opacity:0;transform:translateY(20px);}}
+    to{{opacity:1;transform:translateY(0);}}
+}}
+@keyframes fadeIn{{
+    from{{opacity:0;}} to{{opacity:1;}}
+}}
+@keyframes heartbeat{{
+    0%,100%{{transform:scale(1);}}
+    14%{{transform:scale(1.15);}}
+    28%{{transform:scale(1);}}
+    42%{{transform:scale(1.1);}}
+    70%{{transform:scale(1);}}
+}}
+@keyframes float{{
+    0%,100%{{transform:translateY(0);}}
+    50%{{transform:translateY(-8px);}}
+}}
+@keyframes slideInLeft{{
+    from{{opacity:0;transform:translateX(-30px);}}
+    to{{opacity:1;transform:translateX(0);}}
+}}
+@keyframes gradientShift{{
+    0%{{background-position:0% 50%;}}
+    50%{{background-position:100% 50%;}}
+    100%{{background-position:0% 50%;}}
+}}
+@keyframes ripple{{
+    0%{{transform:scale(0.95);box-shadow:0 0 0 0 {T['p']}44;}}
+    70%{{transform:scale(1);box-shadow:0 0 0 10px {T['p']}00;}}
+    100%{{transform:scale(0.95);box-shadow:0 0 0 0 {T['p']}00;}}
+}}
+
+/* Apply animations to elements */
+.app-header{{animation:fadeIn 0.6s ease;}}
+.stTabs [data-baseweb="tab-list"]{{animation:fadeUp 0.4s ease;}}
+.stMetric{{animation:fadeUp 0.5s ease;}}
+.profile-card{{animation:fadeUp 0.5s ease;}}
+
+/* Animated heart for emergency */
+.emergency-pulse{{
+    display:inline-block;
+    animation:heartbeat 1.5s ease infinite;
+}}
+
+/* Floating leaf for header */
+.float-icon{{
+    display:inline-block;
+    animation:float 3s ease-in-out infinite;
+}}
+
+/* Animated gradient background for welcome */
+.animated-bg{{
+    background:linear-gradient(270deg,{T['p']},{T['s']},{T['a']});
+    background-size:400% 400%;
+    animation:gradientShift 6s ease infinite;
+}}
+
+/* Ripple on assess button */
+div.stButton > button:active{{
+    animation:ripple 0.4s ease;
+}}
+
+/* Stagger card animations */
+.stTabs [data-baseweb="tab-panel"] > div > div:nth-child(1){{animation:fadeUp 0.3s ease;}}
+.stTabs [data-baseweb="tab-panel"] > div > div:nth-child(2){{animation:fadeUp 0.4s ease;}}
+.stTabs [data-baseweb="tab-panel"] > div > div:nth-child(3){{animation:fadeUp 0.5s ease;}}
+
+/* Smooth metric number animation */
+[data-testid="stMetricValue"]{{
+    transition:all 0.3s ease;
+}}
+
+/* Hover lift on cards */
+.step:hover,.step-red:hover,.step-pink:hover{{
+    transform:translateY(-2px);
+    box-shadow:0 4px 12px rgba(0,0,0,0.1);
+    transition:all 0.2s ease;
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -201,7 +282,7 @@ st.markdown(f"""
 <div class="app-header">
   <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
     <div style="font-size:3.5rem;line-height:1">{g_emoji}</div>
-    <div style="flex:1;">
+    <div style="flex:1;animation:slideInLeft 0.5s ease;">
       <h1>Khareef Health</h1>
       <div class="byline">by Sadga Selime</div>
       <div class="sub">AI Telemedicine Triage · Salalah, Dhofar, Oman</div>
@@ -315,13 +396,15 @@ if not st.session_state.welcomed:
 
     st.stop()  # Don't show the rest of the app until welcomed
 
-tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, tab_about = st.tabs([
+tab_profile, tab_assess, tab_emergency, tab_medicine, tab_women, tab_diseases, tab_skin, tab_research, tab_about = st.tabs([
     "👤 My Profile",
     "🩺 Health Check",
     "🚨 Emergency",
     "💊 Medicines",
     "👩 Women's Health",
     "🦠 Diseases",
+    "📸 Skin Analysis",
+    "📊 Community Trends",
     "ℹ️ About",
 ])
 
@@ -397,6 +480,7 @@ with tab_profile:
 
     with col_p2:
         st.markdown("#### Your Profile Card")
+        # Only show THIS user's own card — not others
         if st.session_state.user_name:
             age_v = st.session_state.user_age
             if age_v <= 1:    age_cat = "👶 Infant"
@@ -418,19 +502,20 @@ with tab_profile:
                     border-radius:8px;padding:8px;font-size:0.82rem">
                     Conditions: {conds}
                 </div>
+                <div style="margin-top:8px;background:rgba(255,255,255,0.15);
+                    border-radius:8px;padding:6px;font-size:0.75rem;opacity:0.8">
+                    🔒 This card is private — only visible to you
+                </div>
             </div>""", unsafe_allow_html=True)
         else:
-            st.info("Fill your profile on the left → click Save")
+            st.info("Fill your profile on the left and click Save. Your card is private and only visible to you.")
 
-        st.markdown("#### Saved Profiles")
-        profiles = load_json(PROFILES_FILE)
-        if profiles:
-            st.dataframe(pd.DataFrame(profiles), use_container_width=True, height=220)
-            st.download_button("📥 Download Profiles",
-                pd.DataFrame(profiles).to_csv(index=False),
-                "profiles.csv","text/csv",key="dl_prof")
-        else:
-            st.caption("No profiles saved yet")
+        # Do NOT show other users' profiles here — admin only sees all profiles
+        st.markdown("""
+        <div style="background:#f0fdf4;border-radius:10px;padding:12px 16px;
+             font-size:0.85rem;color:#16a34a;border:1px solid #bbf7d0;margin-top:8px;">
+            🔒 <b>Privacy:</b> Your profile is private. Other users cannot see your information.
+        </div>""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════
 # TAB 2 — HEALTH CHECK
@@ -1494,6 +1579,355 @@ with tab_diseases:
                 st.info("Sultan Qaboos Hospital Salalah — Emergency: 999 — +968 23 218 000")
                 st.link_button("📍 Open in Google Maps",
                     "https://maps.google.com/?q=Sultan+Qaboos+Hospital+Salalah+Oman")
+
+# ══════════════════════════════════════
+# TAB 7 — SKIN ANALYSIS (AI Vision)
+# ══════════════════════════════════════
+with tab_skin:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:16px;
+         padding:20px 28px;color:white;text-align:center;margin-bottom:20px;">
+        <div style="font-size:2rem">📸</div>
+        <div style="font-size:1.4rem;font-weight:700">AI Skin Analysis</div>
+        <div style="opacity:0.85;font-size:0.9rem">
+            Take or upload a photo of a skin concern for AI analysis</div>
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown("""<div class="disclaimer">
+        ⚠️ For educational purposes only. This AI analysis is NOT a dermatological diagnosis.
+        Always consult a qualified doctor for skin concerns.</div>""", unsafe_allow_html=True)
+    st.markdown("")
+
+    skin_method = st.radio("How would you like to add the image?",
+        ["📷 Take photo with camera", "📁 Upload from device"],
+        horizontal=True, key="skin_method")
+
+    img_data = None
+
+    if skin_method == "📷 Take photo with camera":
+        camera_img = st.camera_input("Point camera at the skin area",
+            key="skin_camera")
+        if camera_img:
+            img_data = camera_img
+    else:
+        uploaded_img = st.file_uploader("Upload skin photo",
+            type=["jpg","jpeg","png","webp"], key="skin_upload")
+        if uploaded_img:
+            img_data = uploaded_img
+
+    if img_data:
+        st.image(img_data, caption="Image for analysis", width=350)
+
+        if st.button("🔍 Analyze with AI", type="primary",
+                use_container_width=True, key="skin_analyze"):
+
+            if not is_api_key_configured():
+                st.error("Gemini API key required for image analysis.")
+            else:
+                with st.spinner("🤖 AI is analyzing the image..."):
+                    try:
+                        from google import genai as genai_vision
+                        import PIL.Image
+                        import io
+
+                        client_v = genai_vision.Client(api_key=GEMINI_API_KEY)
+
+                        # Read image bytes
+                        img_bytes = img_data.getvalue()
+                        pil_img   = PIL.Image.open(io.BytesIO(img_bytes))
+
+                        skin_prompt = """You are a helpful AI assistant providing general educational
+information about visible skin conditions.
+
+Look at this image carefully and provide:
+
+1. WHAT YOU SEE: Describe the visual appearance (color, texture, shape, size if visible)
+2. POSSIBLE CONDITIONS: List 2-3 common skin conditions that may look similar (educational only)
+3. CHARACTERISTICS: What features are notable (redness, scaling, borders, etc.)
+4. WHEN TO SEE A DOCTOR: Specific warning signs visible that need urgent attention
+5. GENERAL CARE TIPS: Basic skincare advice for this type of concern
+
+IMPORTANT RULES:
+- This is EDUCATIONAL ONLY — not a diagnosis
+- Always recommend seeing a real doctor
+- If you see signs that could be serious (spreading rash, open wounds, severe inflammation),
+  say so clearly
+- Keep language simple and clear
+- End with: "Please consult a qualified dermatologist or doctor for proper diagnosis and treatment."
+
+Format your response clearly with the numbered sections above."""
+
+                        response_v = client_v.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=[skin_prompt, pil_img]
+                        )
+                        analysis = response_v.text.strip()
+
+                        st.markdown("---")
+                        st.markdown("### 🤖 AI Visual Analysis")
+                        st.info(analysis)
+
+                        st.warning(
+                            "⚠️ This is AI-generated educational information only. "
+                            "It is NOT a medical diagnosis. Please consult a qualified "
+                            "dermatologist or doctor for proper diagnosis and treatment."
+                        )
+
+                        st.markdown("### 🏥 See a Doctor in Salalah")
+                        st.info(
+                            "**Sultan Qaboos Hospital — Salalah**\n"
+                            "📍 Al Dahariz, Salalah · 📞 +968 23 218 000"
+                        )
+
+                    except ImportError:
+                        st.error("PIL library required. Add 'Pillow' to requirements.txt")
+                    except Exception as e:
+                        st.error(f"Analysis failed: {str(e)}")
+    else:
+        st.markdown("""
+        <div style="background:#f5f3ff;border:2px dashed #7c3aed;border-radius:14px;
+             padding:30px;text-align:center;color:#6d28d9;">
+            <div style="font-size:3rem">📸</div>
+            <div style="font-size:1.1rem;font-weight:600;margin:8px 0">
+                Take or upload a photo to begin analysis</div>
+            <div style="font-size:0.9rem;opacity:0.75">
+                Works best with: rashes, spots, skin changes, wound healing</div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### 📚 Common Skin Conditions in Salalah")
+    sc1, sc2, sc3 = st.columns(3)
+    with sc1:
+        st.markdown("""<div class="step">
+            <b>🌿 Heat Rash (Khareef)</b><br>
+            Small red bumps from blocked sweat glands.
+            Very common in Khareef humidity.<br>
+            <i>Treatment: Cool shower, loose clothing, calamine lotion</i>
+        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="step">
+            <b>☀️ Sunburn</b><br>
+            Red, painful skin from UV exposure.<br>
+            <i>Treatment: Aloe vera, cool compress, stay hydrated</i>
+        </div>""", unsafe_allow_html=True)
+    with sc2:
+        st.markdown("""<div class="step">
+            <b>🦟 Insect Bites</b><br>
+            Red, itchy bumps. Watch for spreading redness.<br>
+            <i>Treatment: Antihistamine cream, avoid scratching</i>
+        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="step">
+            <b>🧴 Eczema</b><br>
+            Dry, itchy, inflamed patches. Often genetic.<br>
+            <i>Treatment: Moisturiser, steroid cream if prescribed</i>
+        </div>""", unsafe_allow_html=True)
+    with sc3:
+        st.markdown("""<div class="step">
+            <b>🔴 Fungal Infection</b><br>
+            Ring-shaped rash, common in humid conditions.<br>
+            <i>Treatment: Antifungal cream, keep area dry</i>
+        </div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="step-red">
+            <b>⚠️ See Doctor Urgently If:</b><br>
+            • Rash spreads rapidly<br>
+            • Fever with rash<br>
+            • Difficulty breathing<br>
+            • Rash after medication
+        </div>""", unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════
+# TAB 8 — COMMUNITY TRENDS & RESEARCH
+# ══════════════════════════════════════
+with tab_research:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,#065f46,#047857,#059669);
+         border-radius:16px;padding:20px 28px;color:white;text-align:center;margin-bottom:20px;">
+        <div style="font-size:2rem">📊</div>
+        <div style="font-size:1.4rem;font-weight:700">Community Health Trends</div>
+        <div style="opacity:0.85;font-size:0.9rem">
+            Salalah, Dhofar — Real-time health analytics for public health research</div>
+        <div style="opacity:0.7;font-size:0.82rem;margin-top:4px">
+            Data supports Dhofar health resource planning and outbreak prediction</div>
+    </div>""", unsafe_allow_html=True)
+
+    # ── LIVE DATA from actual records ──
+    records_live = load_json(RECORDS_FILE)
+
+    if len(records_live) >= 3:
+        # Use real data
+        df_live = pd.DataFrame(records_live)
+        use_mock = False
+        st.success(f"📡 Showing live data from {len(records_live)} real health assessments")
+    else:
+        # Use mock data for demo
+        use_mock = True
+        st.info("📋 Showing sample data — grows automatically as users submit health checks")
+
+    # Generate mock data (realistic for Salalah)
+    import random
+    from datetime import timedelta
+
+    if use_mock:
+        random.seed(42)
+        mock_records = []
+        symptoms_pool = ["cough","fever","dizziness","fatigue","headache",
+                        "breathlessness","nausea","chest_pain"]
+        for i in range(120):
+            day_offset = random.randint(0, 29)
+            date = (datetime.now() - timedelta(days=day_offset)).strftime("%Y-%m-%d")
+            syms = random.sample(symptoms_pool, random.randint(1,3))
+            mock_records.append({
+                "timestamp": date + " " + f"{random.randint(7,22):02d}:{random.randint(0,59):02d}",
+                "date":      date,
+                "age":       random.randint(18, 85),
+                "gender":    random.choice(["Male","Female","Not specified"]),
+                "city":      random.choice(["Salalah"]*7 + ["Taqah","Mirbat","Rakhyut"]),
+                "symptoms":  ", ".join(syms),
+                "triage_level": random.choices(
+                    ["GREEN","YELLOW","RED"], weights=[55,35,10])[0],
+                "khareef_mode": random.random() > 0.5,
+            })
+        df_live = pd.DataFrame(mock_records)
+
+    # ── KPI METRICS ──
+    st.markdown("### 📈 Key Health Indicators")
+    k1,k2,k3,k4,k5 = st.columns(5)
+    k1.metric("Total Assessments",  len(df_live))
+    k2.metric("🟢 Normal",   len(df_live[df_live["triage_level"]=="GREEN"]))
+    k3.metric("🟡 Moderate", len(df_live[df_live["triage_level"]=="YELLOW"]))
+    k4.metric("🔴 Urgent",   len(df_live[df_live["triage_level"]=="RED"]))
+
+    if "age" in df_live.columns:
+        try:
+            avg_age = round(df_live["age"].astype(float).mean(), 1)
+            k5.metric("Avg Age", avg_age)
+        except:
+            k5.metric("Avg Age", "N/A")
+
+    st.markdown("---")
+
+    # ── CHARTS ──
+    chart1, chart2 = st.columns(2)
+
+    with chart1:
+        st.markdown("#### 🤒 Most Common Symptoms This Month")
+        # Count symptoms
+        sym_counts = {}
+        for _, row in df_live.iterrows():
+            syms = str(row.get("symptoms","")).split(", ")
+            for s in syms:
+                s = s.strip()
+                if s and s != "None" and s != "nan":
+                    sym_counts[s] = sym_counts.get(s, 0) + 1
+
+        if sym_counts:
+            df_syms = pd.DataFrame([
+                {"Symptom": k.replace("_"," ").title(), "Count": v}
+                for k,v in sorted(sym_counts.items(), key=lambda x:-x[1])[:10]
+            ])
+            st.bar_chart(df_syms.set_index("Symptom"), color="#1a5c45", height=300)
+
+    with chart2:
+        st.markdown("#### 🚦 Triage Level Distribution")
+        triage_counts = df_live["triage_level"].value_counts().reset_index()
+        triage_counts.columns = ["Level","Count"]
+        triage_counts["Color"] = triage_counts["Level"].map(
+            {"GREEN":"🟢 Green","YELLOW":"🟡 Yellow","RED":"🔴 Red"})
+        st.bar_chart(triage_counts.set_index("Level")["Count"], height=300)
+
+    st.markdown("---")
+    chart3, chart4 = st.columns(2)
+
+    with chart3:
+        st.markdown("#### 📅 Daily Assessment Volume (Last 30 Days)")
+        if "date" in df_live.columns or "timestamp" in df_live.columns:
+            try:
+                df_live["date_only"] = pd.to_datetime(
+                    df_live.get("date", df_live["timestamp"].str[:10])).dt.strftime("%Y-%m-%d")
+                daily = df_live.groupby("date_only").size().reset_index(name="Assessments")
+                daily = daily.sort_values("date_only").tail(30)
+                st.line_chart(daily.set_index("date_only"), color="#1a5c45", height=250)
+            except Exception as e:
+                st.info(f"Chart loading: {e}")
+
+    with chart4:
+        st.markdown("#### 👥 Age Distribution of Users")
+        if "age" in df_live.columns:
+            try:
+                ages = df_live["age"].dropna().astype(float)
+                bins = [0,12,17,30,45,60,75,100]
+                labels = ["0-12","13-17","18-30","31-45","46-60","61-75","75+"]
+                age_groups = pd.cut(ages, bins=bins, labels=labels)
+                age_df = age_groups.value_counts().sort_index().reset_index()
+                age_df.columns = ["Age Group","Count"]
+                st.bar_chart(age_df.set_index("Age Group"), color="#7c3aed", height=250)
+            except:
+                st.info("Age data loading...")
+
+    st.markdown("---")
+
+    # ── KHAREEF IMPACT ──
+    st.markdown("### 🌦️ Khareef Season Health Impact")
+    if "khareef_mode" in df_live.columns:
+        khareef_data = df_live[df_live["khareef_mode"] == True]
+        normal_data  = df_live[df_live["khareef_mode"] == False]
+
+        kc1, kc2, kc3 = st.columns(3)
+        kc1.metric("Khareef Assessments", len(khareef_data))
+        kc2.metric("Normal Season",       len(normal_data))
+
+        if len(khareef_data) > 0:
+            khareef_red_pct = round(len(khareef_data[khareef_data["triage_level"]=="RED"]) / len(khareef_data) * 100, 1)
+            kc3.metric("🔴 Urgent in Khareef", f"{khareef_red_pct}%")
+
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;
+         padding:18px 22px;border-left:5px solid #f59e0b;margin:12px 0;">
+        <div style="font-weight:700;color:#92400e;font-size:1rem">
+            🌦️ Khareef Season Insight for Public Health Officials</div>
+        <div style="color:#78350f;font-size:0.9rem;margin-top:8px;line-height:1.7">
+            During Salalah's unique Khareef monsoon season (June–September), this app data shows
+            elevated rates of respiratory complaints, fungal skin conditions, and joint pain.
+            This real-time symptom tracking can help Dhofar health authorities:
+            <br>• Pre-position respiratory medications at health centres
+            <br>• Plan staffing increases at Sultan Qaboos Hospital during peak tourist season
+            <br>• Identify early signs of respiratory outbreaks in elderly populations
+            <br>• Track effectiveness of public health interventions in real time
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # ── CITY BREAKDOWN ──
+    if "city" in df_live.columns:
+        st.markdown("### 📍 Geographic Distribution — Dhofar Region")
+        city_counts = df_live["city"].value_counts().reset_index()
+        city_counts.columns = ["City","Assessments"]
+        cc1, cc2 = st.columns(2)
+        with cc1:
+            st.bar_chart(city_counts.set_index("City"), color="#1a5c45", height=250)
+        with cc2:
+            st.dataframe(city_counts, use_container_width=True, height=250)
+
+    st.markdown("---")
+
+    # ── RESEARCH NOTE ──
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:12px;
+         padding:20px 24px;border-left:5px solid #2563eb;">
+        <div style="font-weight:700;color:#1e40af;font-size:1.05rem">
+            🎓 Research Partnership Opportunity</div>
+        <div style="color:#1e3a8a;font-size:0.9rem;margin-top:10px;line-height:1.8">
+            <b>Khareef Health</b> is uniquely positioned to support medical research in Dhofar:<br><br>
+            ✅ <b>Real-time symptom surveillance</b> across Salalah and surrounding areas<br>
+            ✅ <b>Seasonal health pattern analysis</b> — Khareef vs. normal season comparison<br>
+            ✅ <b>Elderly health monitoring</b> — a priority population in Dhofar<br>
+            ✅ <b>AI-assisted triage data</b> for benchmarking clinical decision support tools<br>
+            ✅ <b>Multilingual health equity</b> — Arabic + English accessibility data<br><br>
+            <i>Contact: sadgaselime@khareefhealth.om for research collaboration enquiries</i>
+        </div>
+    </div>""", unsafe_allow_html=True)
+
 
 # ══════════════════════════════════════
 # TAB 8 — ABOUT
