@@ -12,6 +12,20 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ── Mobile PWA meta tags + Custom Icon ────────────
+st.markdown("""
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Khareef Health">
+<meta name="theme-color" content="#1a5c45">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/sadgaselime/khareef-health/main/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="https://raw.githubusercontent.com/sadgaselime/khareef-health/main/icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://raw.githubusercontent.com/sadgaselime/khareef-health/main/icon-192.png">
+</head>
+""", unsafe_allow_html=True)
+
 # ── imports ──────────────────────────────────────
 import os, json, uuid
 from datetime import datetime
@@ -122,6 +136,28 @@ html,body,[class*="css"]{font-family:'Poppins',sans-serif;}
 .float{display:inline-block;animation:float 3s ease-in-out infinite;}
 section[data-testid="stSidebar"]{display:none;}
 #MainMenu,footer,header{visibility:hidden;}
+
+/* ── Mobile Responsive ── */
+@media (max-width: 768px) {
+    .header-box{padding:16px 18px!important;}
+    .header-box h1, .header-box div[style*="1.8rem"]{font-size:1.3rem!important;}
+    .stTabs [data-baseweb="tab"]{font-size:0.72rem!important;padding:5px 7px!important;}
+    .step, .step-red{font-size:0.82rem!important;padding:8px 10px!important;}
+    div.stButton > button{font-size:1rem!important;padding:12px!important;}
+    [data-testid="column"]{min-width:100%!important;}
+}
+@media (max-width: 480px) {
+    .header-box{padding:12px 14px!important;}
+    .stTabs [data-baseweb="tab"]{font-size:0.68rem!important;padding:4px 6px!important;}
+}
+
+/* ── Install Banner ── */
+.install-banner{
+    background:linear-gradient(135deg,#065f46,#047857);
+    border-radius:12px;padding:14px 20px;color:white;
+    display:flex;align-items:center;gap:14px;margin-bottom:12px;
+    box-shadow:0 4px 14px rgba(6,95,70,0.3);
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -180,6 +216,40 @@ st.markdown(f"""
 </div>
 </div>""", unsafe_allow_html=True)
 
+# ── Install as App Banner ────────────────────────
+import streamlit.components.v1 as components
+components.html("""
+<div id="installBanner" style="display:none;background:linear-gradient(135deg,#065f46,#047857);
+     border-radius:12px;padding:14px 20px;color:white;margin-bottom:12px;
+     display:flex;align-items:center;gap:14px;cursor:pointer;"
+     onclick="installApp()">
+    <span style="font-size:1.5rem">📲</span>
+    <div style="flex:1">
+        <div style="font-weight:700">Install Khareef Health</div>
+        <div style="font-size:0.82rem;opacity:0.85">Add to home screen for quick access</div>
+    </div>
+    <span id="dismissBtn" style="opacity:0.7;font-size:1.2rem" onclick="dismissBanner(event)">✕</span>
+</div>
+<script>
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBanner').style.display = 'flex';
+});
+function installApp() {
+    if(deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+    }
+}
+function dismissBanner(e) {
+    e.stopPropagation();
+    document.getElementById('installBanner').style.display = 'none';
+}
+</script>
+""", height=70)
+
 # ══════════════════════════════════════
 # SETTINGS BAR
 # ══════════════════════════════════════
@@ -212,11 +282,13 @@ st.markdown("---")
 tabs = st.tabs([
     "👤 Profile","🩺 Health Check","🚨 Emergency",
     "💊 Medicines","👩 Women","🦠 Diseases",
-    "📸 Skin AI","💊📷 Med Scanner","📊 Trends","ℹ️ About"
+    "📸 Skin AI","💊📷 Med Scanner","📊 Trends",
+    "💊🔔 Reminders","ℹ️ About"
 ])
 (tab_profile, tab_assess, tab_emergency,
  tab_medicine, tab_women, tab_diseases,
- tab_skin, tab_medscan, tab_research, tab_about) = tabs
+ tab_skin, tab_medscan, tab_research,
+ tab_reminders, tab_about) = tabs
 
 # ══════════════════════════════════════
 # PROFILE TAB
@@ -281,6 +353,13 @@ with tab_medscan:
 with tab_research:
     from tabs.tab_research import render
     render(T, load_json, RECORDS_FILE)
+
+# ══════════════════════════════════════
+# REMINDERS TAB
+# ══════════════════════════════════════
+with tab_reminders:
+    from tabs.tab_reminders import render
+    render(T)
 
 # ══════════════════════════════════════
 # ABOUT TAB
