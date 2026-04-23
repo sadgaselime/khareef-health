@@ -219,36 +219,136 @@ st.markdown(f"""
 # ── Install as App Banner ────────────────────────
 import streamlit.components.v1 as components
 components.html("""
-<div id="installBanner" style="display:none;background:linear-gradient(135deg,#065f46,#047857);
+<div id="installBanner" style="background:linear-gradient(135deg,#065f46,#047857);
      border-radius:12px;padding:14px 20px;color:white;margin-bottom:12px;
-     display:flex;align-items:center;gap:14px;cursor:pointer;"
-     onclick="installApp()">
+     display:flex;align-items:center;gap:14px;cursor:pointer;position:relative;"
+     onclick="showInstructions()">
     <span style="font-size:1.5rem">📲</span>
     <div style="flex:1">
-        <div style="font-weight:700">Install Khareef Health</div>
-        <div style="font-size:0.82rem;opacity:0.85">Add to home screen for quick access</div>
+        <div style="font-weight:700;font-size:1rem">Install Khareef Health</div>
+        <div style="font-size:0.82rem;opacity:0.85">Tap here — Add to your home screen</div>
     </div>
-    <span id="dismissBtn" style="opacity:0.7;font-size:1.2rem" onclick="dismissBanner(event)">✕</span>
+    <span style="font-size:1.2rem">›</span>
 </div>
+
+<!-- Instructions popup -->
+<div id="popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);
+     z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:20px;padding:28px;max-width:340px;
+         margin:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+
+        <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:2.5rem">📲</div>
+            <div style="font-size:1.2rem;font-weight:700;color:#1a5c45;margin-top:8px">
+                Install Khareef Health</div>
+            <div style="font-size:0.85rem;color:#6b7280;margin-top:4px">
+                Follow steps for your device below</div>
+        </div>
+
+        <!-- iPhone instructions -->
+        <div id="iphoneSteps" style="display:none;">
+            <div style="background:#f0fdf4;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="font-weight:700;color:#1a5c45;margin-bottom:10px">
+                    🍎 iPhone / iPad Steps:</div>
+                <div style="font-size:0.9rem;line-height:2;color:#374151;">
+                    1. Tap the <b>Share button</b> ⬆️ at the bottom of Safari<br>
+                    2. Scroll down and tap <b>"Add to Home Screen"</b><br>
+                    3. Tap <b>"Add"</b> in the top right corner<br>
+                    4. Done! Khareef Health icon appears on home screen ✅
+                </div>
+            </div>
+            <div style="font-size:0.8rem;color:#9ca3af;text-align:center">
+                ⚠️ Must use Safari browser on iPhone</div>
+        </div>
+
+        <!-- Android instructions -->
+        <div id="androidSteps" style="display:none;">
+            <div style="background:#f0fdf4;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="font-weight:700;color:#1a5c45;margin-bottom:10px">
+                    🤖 Android Steps:</div>
+                <div style="font-size:0.9rem;line-height:2;color:#374151;">
+                    1. Tap the <b>three dots ⋮</b> menu in Chrome<br>
+                    2. Tap <b>"Add to Home screen"</b><br>
+                    3. Tap <b>"Add"</b> to confirm<br>
+                    4. Done! Icon appears on your home screen ✅
+                </div>
+            </div>
+        </div>
+
+        <!-- Desktop instructions -->
+        <div id="desktopSteps" style="display:none;">
+            <div style="background:#f0fdf4;border-radius:12px;padding:16px;margin-bottom:12px;">
+                <div style="font-weight:700;color:#1a5c45;margin-bottom:10px">
+                    💻 Desktop (Chrome) Steps:</div>
+                <div style="font-size:0.9rem;line-height:2;color:#374151;">
+                    1. Look for the <b>install icon ⊕</b> in the address bar<br>
+                    2. Click it and select <b>"Install"</b><br>
+                    3. Or click three dots ⋮ → <b>"Install Khareef Health"</b><br>
+                    4. Done! App opens like a desktop application ✅
+                </div>
+            </div>
+        </div>
+
+        <!-- Share link -->
+        <div style="background:#eff6ff;border-radius:12px;padding:14px;margin-bottom:16px;">
+            <div style="font-size:0.82rem;font-weight:600;color:#1e40af;margin-bottom:6px">
+                📋 App Link — Copy and Share:</div>
+            <div id="appUrl" style="background:white;border-radius:8px;padding:8px 12px;
+                 font-size:0.75rem;color:#374151;word-break:break-all;
+                 border:1px solid #bfdbfe;cursor:pointer;"
+                 onclick="copyLink()">
+                khareef-health-6ni9nxypihjhpwsq4nohmw.streamlit.app
+            </div>
+            <div id="copiedMsg" style="display:none;color:#16a34a;font-size:0.8rem;
+                 margin-top:4px;text-align:center">✅ Copied!</div>
+        </div>
+
+        <button onclick="closePopup()" style="width:100%;background:#1a5c45;color:white;
+            border:none;border-radius:10px;padding:12px;font-size:1rem;
+            font-weight:700;cursor:pointer;">
+            Got it! ✓
+        </button>
+    </div>
+</div>
+
 <script>
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    document.getElementById('installBanner').style.display = 'flex';
-});
-function installApp() {
-    if(deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+function showInstructions() {
+    document.getElementById('popup').style.display = 'flex';
+    var ua = navigator.userAgent.toLowerCase();
+    if (/iphone|ipad|ipod/.test(ua)) {
+        document.getElementById('iphoneSteps').style.display = 'block';
+    } else if (/android/.test(ua)) {
+        document.getElementById('androidSteps').style.display = 'block';
+    } else {
+        document.getElementById('desktopSteps').style.display = 'block';
+    }
+    // Try native install prompt (Chrome Android/Desktop)
+    if (window.deferredPrompt) {
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then(function() {
+            window.deferredPrompt = null;
+        });
     }
 }
-function dismissBanner(e) {
-    e.stopPropagation();
-    document.getElementById('installBanner').style.display = 'none';
+function closePopup() {
+    document.getElementById('popup').style.display = 'none';
 }
+function copyLink() {
+    var url = 'khareef-health-6ni9nxypihjhpwsq4nohmw.streamlit.app';
+    navigator.clipboard.writeText(url).then(function() {
+        document.getElementById('copiedMsg').style.display = 'block';
+        setTimeout(function() {
+            document.getElementById('copiedMsg').style.display = 'none';
+        }, 2000);
+    });
+}
+// Listen for native install prompt
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    window.deferredPrompt = e;
+});
 </script>
-""", height=70)
+""", height=80)
 
 # ══════════════════════════════════════
 # SETTINGS BAR
