@@ -11,7 +11,7 @@ import os
 from datetime import datetime
 from data import Patient, validate_patient_input, normalize_symptoms, log_patient, get_session_log
 from triage import assess_patient
-from gemini_helper import get_gemini_advice, is_api_key_configured, get_api_key_status
+from gemini_helper import get_gemini_advice, is_api_key_configured, get_api_key_status, analyze_free_text
 from diseases import DISEASES, CATEGORIES, search_diseases, get_by_category
 
 st.set_page_config(
@@ -441,6 +441,108 @@ with tab_assess:
             elif temperature<35.5:  st.error("🔴 Too Low")
             else:                    st.success("🟢 Normal")
 
+    st.markdown("---")
+
+
+    st.markdown("---")
+
+    # ── FREE TEXT AI ANALYSIS ──
+    st.markdown("### 💬 Describe Your Problem in Your Own Words")
+    st.caption("Type anything — AI will analyze it directly. Works in English or Arabic.")
+
+    free_text_input = st.text_area(
+        "What is bothering you? / ما الذي يزعجك؟",
+        placeholder=(
+            "Example: I have had a headache for 2 days, feel dizzy and my neck is stiff...\n"
+            "مثال: عندي صداع منذ يومين وأشعر بدوار وتصلب في الرقبة..."
+        ),
+        height=110,
+        key="free_text_health"
+    )
+
+    ft_col1, ft_col2 = st.columns([1, 1])
+    with ft_col1:
+        analyze_en = st.button("🔍 Analyze in English",
+            type="primary", use_container_width=True, key="ft_en")
+    with ft_col2:
+        analyze_ar = st.button("🔍 تحليل بالعربية",
+            use_container_width=True, key="ft_ar")
+
+    if (analyze_en or analyze_ar) and free_text_input.strip():
+        lang = "ar" if analyze_ar else "en"
+        with st.spinner("🤖 AI is analyzing your health concern..."):
+            ft_result = analyze_free_text(free_text_input, language=lang)
+
+        if ft_result["success"]:
+            urgency = ft_result.get("urgency", "MEDIUM")
+            urgency_config = {
+                "HIGH":   ("🔴 HIGH — Seek help immediately", "#dc2626", "result-red"),
+                "MEDIUM": ("🟡 MEDIUM — See a doctor soon",  "#d97706", "result-yellow"),
+                "LOW":    ("🟢 LOW — Monitor at home",       "#16a34a", "result-green"),
+            }
+            u_label, u_color, u_css = urgency_config.get(urgency, urgency_config["MEDIUM"])
+
+            st.markdown("---")
+            st.markdown("### 🤖 AI Health Analysis")
+
+            # Urgency banner
+            st.markdown(f"""
+            <div class="{u_css}" style="margin-bottom:16px;">
+                <div style="font-size:1.5rem;font-weight:700;color:{u_color}">
+                    Urgency Level: {u_label}
+                </div>
+            </div>""", unsafe_allow_html=True)
+
+            # Results in columns
+            r1, r2 = st.columns(2)
+
+            with r1:
+                if ft_result.get("symptoms"):
+                    st.markdown("#### 🤒 Symptoms Identified")
+                    for s in ft_result["symptoms"]:
+                        st.markdown(f'<div class="step-red">• {s}</div>',
+                            unsafe_allow_html=True)
+
+                if ft_result.get("explanation"):
+                    st.markdown("#### 💡 Why This Might Be Happening")
+                    st.info(ft_result["explanation"])
+
+            with r2:
+                if ft_result.get("causes"):
+                    st.markdown("#### 🔬 Possible Causes")
+                    for c in ft_result["causes"]:
+                        st.markdown(f'<div class="step">• {c}</div>',
+                            unsafe_allow_html=True)
+
+                if ft_result.get("next_steps"):
+                    st.markdown("#### ✅ What To Do Next")
+                    for step in ft_result["next_steps"]:
+                        st.markdown(f'<div class="step">• {step}</div>',
+                            unsafe_allow_html=True)
+
+            # Hospital info if HIGH urgency
+            if urgency == "HIGH":
+                st.error(
+                    "🚨 **Please go to Sultan Qaboos Hospital Salalah NOW**\n\n"
+                    "📍 Al Dahariz, Salalah · 📞 Emergency: **999** · +968 23 218 000"
+                )
+                st.link_button("📍 Open in Google Maps",
+                    "https://maps.google.com/?q=Sultan+Qaboos+Hospital+Salalah+Oman")
+
+            st.markdown("""<div class="disclaimer">
+                ⚠️ This AI analysis is for general guidance only.
+                It does NOT replace a qualified doctor's diagnosis.
+                Always consult a licensed medical professional.
+            </div>""", unsafe_allow_html=True)
+
+        else:
+            st.error(f"AI analysis failed: {ft_result.get('error', 'Unknown error')}")
+
+    elif (analyze_en or analyze_ar) and not free_text_input.strip():
+        st.warning("Please describe your health concern before clicking Analyze.")
+
+    st.markdown("---")
+    st.markdown("### — OR use the structured form below —")
     st.markdown("---")
 
     # ── SYMPTOMS ──
@@ -1266,7 +1368,8 @@ with tab_diseases:
                 for w in d["when_to_seek_help"]:
                     st.markdown(f'<div class="step-red">⚠️ {w}</div>', unsafe_allow_html=True)
                 st.markdown("")
-                st.info("Sultan Qaboos Hospital Salalah — Emergency: 999 — +968 23 218 000")
+                st.info("**Sultan Qaboos Hospital Salalah**
+📞 Emergency: 999 · +968 23 218 000")
                 st.link_button("📍 Open in Google Maps",
                     "https://maps.google.com/?q=Sultan+Qaboos+Hospital+Salalah+Oman")
 
