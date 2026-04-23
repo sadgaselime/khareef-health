@@ -1368,8 +1368,7 @@ with tab_diseases:
                 for w in d["when_to_seek_help"]:
                     st.markdown(f'<div class="step-red">⚠️ {w}</div>', unsafe_allow_html=True)
                 st.markdown("")
-                st.info("Sultan Qaboos Hospital Salalah
-📞 Emergency: 999 · +968 23 218 000")
+st.info("Sultan Qaboos Hospital Salalah — Emergency: 999 — +968 23 218 000")
                 st.link_button("📍 Open in Google Maps",
                     "https://maps.google.com/?q=Sultan+Qaboos+Hospital+Salalah+Oman")
 
