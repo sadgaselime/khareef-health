@@ -156,58 +156,55 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Poppins:wght@400;600;700&display=swap');
 html,body,[class*="css"]{font-family:'Poppins',sans-serif;}
 """ + f"""
-.stApp{{background:linear-gradient(150deg,{T['l']} 0%,#f9fafb 60%,{T['l']} 100%)!important;}}
-.header-box{{background:linear-gradient({T['g']});border-radius:20px;padding:26px 32px;
-    color:white;box-shadow:0 8px 28px {T['p']}55;margin-bottom:16px;}}
-.profile-card{{background:linear-gradient({T['g']});color:white;border-radius:14px;
-    padding:22px;text-align:center;}}
+.stApp{{background:
+    radial-gradient(ellipse at 10% 10%, {T['l']} 0%,transparent 55%),
+    radial-gradient(ellipse at 90% 90%, {T['l']}99 0%,transparent 55%),
+    linear-gradient(160deg,#f8fafb 0%,#f0f4f2 100%);}}
+.header-box{{background:linear-gradient({T['g']});border-radius:20px;
+    padding:26px 32px;color:white;box-shadow:0 8px 28px {T['p']}55;
+    margin-bottom:16px;position:relative;overflow:hidden;}}
+.profile-card{{background:linear-gradient({T['g']});color:white;
+    border-radius:16px;padding:24px;text-align:center;
+    position:relative;overflow:hidden;}}
 .step{{background:{T['l']};border-left:4px solid {T['p']};border-radius:8px;
-    padding:10px 14px;margin:6px 0;font-size:0.9rem;line-height:1.6;}}
-.stTabs [data-baseweb="tab-list"]{{background:white;border-radius:12px;padding:5px;
-    box-shadow:0 2px 12px rgba(0,0,0,0.06);gap:4px;}}
+    padding:10px 14px;margin:6px 0;font-size:0.9rem;line-height:1.6;
+    transition:transform 0.15s ease,box-shadow 0.15s ease;}}
+.step:hover{{transform:translateX(4px);box-shadow:2px 2px 8px {T['p']}22;}}
+.stTabs [data-baseweb="tab-list"]{{background:white;border-radius:12px;
+    padding:5px;box-shadow:0 2px 12px rgba(0,0,0,0.06);gap:4px;}}
 .stTabs [aria-selected="true"]{{background:{T['p']}!important;color:white!important;}}
 .stTabs [data-baseweb="tab"]{{border-radius:8px;font-weight:600;font-size:0.83rem;padding:7px 12px;}}
+[data-testid="stMetricValue"]{{color:{T['p']}!important;font-weight:700!important;}}
+div.stButton > button{{background:linear-gradient({T['g']});color:white!important;
+    border:none;border-radius:10px;font-weight:700;transition:all 0.2s ease;
+    box-shadow:0 4px 12px {T['p']}33;}}
+div.stButton > button:hover{{transform:translateY(-2px);box-shadow:0 6px 18px {T['p']}44;}}
+.stSelectbox>div>div,.stTextInput input,.stNumberInput input,.stTextArea textarea{{
+    border-radius:10px!important;border-color:{T['p']}44!important;}}
 """ + """
 .step-red{background:#fff1f2;border-left:4px solid #dc2626;border-radius:8px;
     padding:10px 14px;margin:6px 0;font-size:0.9rem;line-height:1.6;}
+.step-red:hover{transform:translateX(4px);}
 .ar{font-family:'Tajawal',sans-serif;direction:rtl;text-align:right;}
 .disclaimer{background:#fff8e1;border:1px solid #fcd34d;border-radius:10px;
     padding:12px 18px;font-size:0.82rem;color:#78350f;}
-.result-green{background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:3px solid #16a34a;
-    border-radius:14px;padding:22px;text-align:center;}
-.result-yellow{background:linear-gradient(135deg,#fef9c3,#fde68a);border:3px solid #f59e0b;
-    border-radius:14px;padding:22px;text-align:center;}
-.result-red{background:linear-gradient(135deg,#fee2e2,#fecaca);border:3px solid #dc2626;
-    border-radius:14px;padding:22px;text-align:center;}
+.result-green{background:linear-gradient(135deg,#dcfce7,#bbf7d0);
+    border:3px solid #16a34a;border-radius:16px;padding:24px;text-align:center;}
+.result-yellow{background:linear-gradient(135deg,#fef9c3,#fde68a);
+    border:3px solid #f59e0b;border-radius:16px;padding:24px;text-align:center;}
+.result-red{background:linear-gradient(135deg,#fee2e2,#fecaca);
+    border:3px solid #dc2626;border-radius:16px;padding:24px;text-align:center;}
 .nutrition-tip{background:#f0fdf4;border-left:3px solid #22c55e;border-radius:6px;
     padding:9px 14px;margin:5px 0;font-size:0.88rem;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.stat-card{border-radius:14px;padding:16px;text-align:center;transition:transform 0.2s;}
+.stat-card:hover{transform:translateY(-3px);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:0.6;}100%{transform:scale(1.5);opacity:0;}}
+@keyframes ecg{0%{stroke-dashoffset:400;}100%{stroke-dashoffset:0;}}
 .float{display:inline-block;animation:float 3s ease-in-out infinite;}
 section[data-testid="stSidebar"]{display:none;}
 #MainMenu,footer,header{visibility:hidden;}
-
-/* ── Mobile Responsive ── */
-@media (max-width: 768px) {
-    .header-box{padding:16px 18px!important;}
-    .header-box h1, .header-box div[style*="1.8rem"]{font-size:1.3rem!important;}
-    .stTabs [data-baseweb="tab"]{font-size:0.72rem!important;padding:5px 7px!important;}
-    .step, .step-red{font-size:0.82rem!important;padding:8px 10px!important;}
-    div.stButton > button{font-size:1rem!important;padding:12px!important;}
-    [data-testid="column"]{min-width:100%!important;}
-}
-@media (max-width: 480px) {
-    .header-box{padding:12px 14px!important;}
-    .stTabs [data-baseweb="tab"]{font-size:0.68rem!important;padding:4px 6px!important;}
-}
-
-/* ── Install Banner ── */
-.install-banner{
-    background:linear-gradient(135deg,#065f46,#047857);
-    border-radius:12px;padding:14px 20px;color:white;
-    display:flex;align-items:center;gap:14px;margin-bottom:12px;
-    box-shadow:0 4px 14px rgba(6,95,70,0.3);
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -285,19 +282,51 @@ g_emoji = "👨" if st.session_state.gender=="Male" else "👩" if st.session_st
 p = T['p']
 st.markdown(f"""
 <div class="header-box">
-<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-  <div class="float" style="font-size:3rem">{g_emoji}</div>
-  <div style="flex:1">
-    <div style="font-size:1.8rem;font-weight:700">Khareef Health</div>
-    <div style="font-size:0.75rem;opacity:0.65">by Sadga Selime</div>
-    <div style="font-size:0.88rem;opacity:0.82">AI Telemedicine Triage · Salalah, Dhofar, Oman</div>
-    <div class="ar" style="font-size:0.85rem;opacity:0.7">مساعد الفرز الطبي الذكي · صلالة، ظفار، عُمان</div>
+
+  <svg style="position:absolute;right:130px;top:6px;opacity:0.06;width:90px;height:90px"
+       viewBox="0 0 100 100">
+    <rect x="40" y="8" width="20" height="84" rx="10" fill="white"/>
+    <rect x="8"  y="40" width="84" height="20" rx="10" fill="white"/>
+  </svg>
+  <svg style="position:absolute;left:-15px;bottom:-20px;opacity:0.05;width:110px;height:110px"
+       viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="44" fill="none" stroke="white" stroke-width="8"/>
+    <circle cx="50" cy="50" r="28" fill="none" stroke="white" stroke-width="4"/>
+  </svg>
+
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:relative;z-index:1">
+    <div style="position:relative">
+      <div class="float" style="font-size:3rem">{g_emoji}</div>
+      <div style="position:absolute;inset:-6px;border-radius:50%;
+           border:2px solid rgba(255,255,255,0.35);animation:pulse-ring 2s ease-out infinite;
+           pointer-events:none"></div>
+    </div>
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:1.8rem;font-weight:700">Khareef Health</span>
+        <span style="background:rgba(255,255,255,0.2);padding:3px 10px;
+               border-radius:99px;font-size:0.7rem;font-weight:700;letter-spacing:1px">
+          AI POWERED</span>
+      </div>
+      <div style="font-size:0.72rem;opacity:0.65">by Sadga Selime &nbsp;·&nbsp; Salalah, Oman 🇴🇲</div>
+      <div style="font-size:0.83rem;opacity:0.85;margin-top:2px">
+        🩺 Triage &nbsp;·&nbsp; 📸 Skin AI &nbsp;·&nbsp; 💊 Med Scanner &nbsp;·&nbsp; 🦠 Diseases</div>
+      <div class="ar" style="font-size:0.8rem;opacity:0.7">
+        مساعد الفرز الطبي الذكي · صلالة، ظفار، عُمان</div>
+    </div>
+    <div style="text-align:center;background:rgba(220,38,38,0.3);border-radius:12px;
+         padding:10px 18px;border:1px solid rgba(255,255,255,0.2)">
+      <div style="font-size:0.7rem;letter-spacing:2px;opacity:0.9">EMERGENCY</div>
+      <div style="font-size:2rem;font-weight:900;letter-spacing:2px">999</div>
+    </div>
   </div>
-  <div style="text-align:center;background:rgba(220,38,38,0.3);border-radius:12px;padding:10px 18px;">
-    <div style="font-size:0.75rem;opacity:0.9">EMERGENCY</div>
-    <div style="font-size:2rem;font-weight:800">999</div>
-  </div>
-</div>
+
+  <svg style="width:100%;height:22px;margin-top:10px;opacity:0.18" viewBox="0 0 500 22">
+    <path d="M0 11 L80 11 L95 2 L105 20 L115 5 L125 17 L135 11 L500 11"
+          stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"
+          stroke-dasharray="400" style="animation:ecg 2s ease forwards"/>
+  </svg>
+
 </div>""", unsafe_allow_html=True)
 
 
@@ -327,6 +356,26 @@ if st.session_state.khareef:
     st.warning("🌦️ Khareef Mode ON — Higher respiratory sensitivity")
 
 st.markdown("---")
+
+# ── Quick stat cards ───────────────────────────────
+col1,col2,col3,col4 = st.columns(4)
+cards = [
+    (col1,"❤️","EMERGENCY","Call 999","#fee2e2","#fca5a5","#dc2626"),
+    (col2,"🩺","AI TRIAGE","GREEN/YELLOW/RED","#d1fae5","#6ee7b7","#065f46"),
+    (col3,"🌐","BILINGUAL","English + Arabic","#dbeafe","#93c5fd","#1e40af"),
+    (col4,"🌦️","KHAREEF","Salalah Season","#fef9c3","#fcd34d","#92400e"),
+]
+for col,emoji,title,sub,bg,border,color in cards:
+    with col:
+        st.markdown(f"""
+        <div style="background:{bg};border:1px solid {border};border-radius:14px;
+             padding:14px;text-align:center;box-shadow:0 2px 8px {color}18;
+             transition:transform 0.2s ease;" class="stat-card">
+            <div style="font-size:1.8rem;margin-bottom:4px">{emoji}</div>
+            <div style="font-weight:700;color:{color};font-size:0.82rem">{title}</div>
+            <div style="font-size:0.75rem;color:{color};opacity:0.75">{sub}</div>
+        </div>""", unsafe_allow_html=True)
+st.markdown("")
 
 # ══════════════════════════════════════
 # TABS
