@@ -209,71 +209,121 @@ section[data-testid="stSidebar"]{display:none;}
 """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════
-# WELCOME SCREEN
+# WELCOME SCREEN — Smart returning user detection
 # ══════════════════════════════════════
 if not st.session_state.welcomed:
-    g = T['g']
+    g  = T['g']
+    p  = T['p']
+
+    # Read localStorage to check if returning user
+    import streamlit.components.v1 as stc_comp
+
     st.markdown(f"""
     <div style="background:linear-gradient({g});border-radius:20px;padding:32px;
-         color:white;text-align:center;margin-bottom:24px;">
-        <div class="float" style="font-size:3rem">🌿</div>
-        <div style="font-size:1.8rem;font-weight:700;margin:8px 0">Khareef Health</div>
-        <div style="opacity:0.85">AI Telemedicine Triage · Salalah, Dhofar, Oman</div>
-        <div class="ar" style="opacity:0.7;margin-top:4px;font-size:0.95rem">
+         color:white;text-align:center;margin-bottom:24px;
+         box-shadow:0 8px 24px {p}44;position:relative;overflow:hidden;">
+        <svg style="position:absolute;right:20px;top:10px;opacity:0.08;width:80px;height:80px"
+             viewBox="0 0 100 100">
+            <rect x="40" y="8" width="20" height="84" rx="10" fill="white"/>
+            <rect x="8" y="40" width="84" height="20" rx="10" fill="white"/>
+        </svg>
+        <div class="float" style="font-size:3.5rem">🌿</div>
+        <div style="font-size:2rem;font-weight:800;margin:10px 0">Khareef Health</div>
+        <div style="opacity:0.9;font-size:0.95rem">
+            AI Telemedicine Triage · Salalah, Dhofar, Oman</div>
+        <div class="ar" style="opacity:0.75;margin-top:6px;font-size:0.9rem">
             مساعد الفرز الطبي الذكي · صلالة، ظفار، عُمان</div>
     </div>""", unsafe_allow_html=True)
 
+    # Check localStorage for returning user
+    stc_comp.html("""
+    <script>
+    var saved = localStorage.getItem('khareef_profile');
+    if (saved) {
+        var p = JSON.parse(saved);
+        var nameEl = window.parent.document.querySelector('[data-testid="stTextInput"] input');
+        var phoneEl = window.parent.document.querySelectorAll('[data-testid="stTextInput"] input')[1];
+        if (nameEl && p.name)  { nameEl.value  = p.name;  nameEl.dispatchEvent(new Event('input',{bubbles:true})); }
+        if (phoneEl && p.phone){ phoneEl.value = p.phone; phoneEl.dispatchEvent(new Event('input',{bubbles:true})); }
+        document.getElementById('returning').style.display = 'block';
+    }
+    </script>
+    <div id="returning" style="display:none;background:rgba(255,255,255,0.15);
+         border-radius:10px;padding:10px 16px;margin:8px 0;font-size:0.9rem;
+         font-family:Poppins,sans-serif;color:#065f46;background:#d1fae5;
+         border:1px solid #6ee7b7;">
+        ✅ Welcome back! Your profile was found on this device.
+    </div>
+    """, height=50)
+
     wc1, wc2, wc3 = st.columns([1,2,1])
     with wc2:
-        st.markdown("#### Please introduce yourself")
-        w_name  = st.text_input("Your Name / اسمك", placeholder="e.g. Ahmed Al-Shanfari", key="wn")
-        w_phone = st.text_input("Phone (optional) / الهاتف", placeholder="+968 9X XXX XXXX", key="wp")
+        st.markdown("#### Welcome / أهلاً وسهلاً 👋")
+        w_name  = st.text_input("Your Name / اسمك",
+            value=st.session_state.user_name,
+            placeholder="e.g. Ahmed Al-Shanfari", key="wn")
+        w_phone = st.text_input("Phone (optional) / الهاتف",
+            value=st.session_state.user_phone,
+            placeholder="+968 9X XXX XXXX", key="wp")
+
         c1,c2 = st.columns(2)
-        if c1.button("Continue / متابعة", type="primary", use_container_width=True):
+        if c1.button("Continue / متابعة", type="primary", use_container_width=True, key="wbtn"):
             st.session_state.welcomed   = True
             st.session_state.user_name  = w_name.strip()
             st.session_state.user_phone = w_phone.strip()
             log_visitor(w_name.strip() or "Anonymous", "entered welcome")
             st.rerun()
-        if c2.button("Skip / تخطي", use_container_width=True):
+        if c2.button("Skip / تخطي", use_container_width=True, key="wskip"):
             st.session_state.welcomed = True
             log_visitor("Anonymous (skipped)", "skipped welcome")
             st.rerun()
+
+        st.markdown("""
+        <div style="text-align:center;font-size:0.78rem;color:#9ca3af;margin-top:10px;">
+            🔒 Your information is private and saved only on this device
+        </div>""", unsafe_allow_html=True)
     st.stop()
 
 # ══════════════════════════════════════
 # AUTO-LOAD PROFILE FROM BROWSER STORAGE
-# Runs on every visit — restores user data
 # ══════════════════════════════════════
 import streamlit.components.v1 as components
 
-# Inject script that reads localStorage and stores in URL param
-components.html("""
-<script>
-(function() {
-    var saved = localStorage.getItem('khareef_profile');
-    if (saved) {
-        try {
-            var p = JSON.parse(saved);
-            // Store in sessionStorage so Streamlit can read it
-            sessionStorage.setItem('khareef_loaded', saved);
-            // Update page title
-            document.title = 'Khareef Health';
-            // Show subtle notification
-            var note = document.createElement('div');
-            note.style.cssText = 'position:fixed;bottom:60px;right:20px;' +
-                'background:#1a5c45;color:white;padding:10px 16px;' +
-                'border-radius:10px;font-size:0.82rem;z-index:9999;' +
-                'font-family:Poppins,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,0.2);' +
-                'animation:fadeIn 0.3s ease;';
-            note.innerHTML = '&#10003; Welcome back, ' + (p.name || 'User') + '!';
-            document.body.appendChild(note);
-            setTimeout(function() { note.remove(); }, 3000);
-        } catch(e) {}
-    }
-})();
-</script>
-""", height=0)
+# Read localStorage profile and restore to session state via URL trick
+if not st.session_state.get("profile_loaded_from_storage"):
+    components.html("""
+    <script>
+    (function() {
+        var saved = localStorage.getItem('khareef_profile');
+        if (saved) {
+            try {
+                var p = JSON.parse(saved);
+                document.title = 'Khareef Health';
+                // Show welcome back toast
+                setTimeout(function() {
+                    var note = document.createElement('div');
+                    note.style.cssText =
+                        'position:fixed;bottom:70px;right:16px;z-index:9999;' +
+                        'background:#1a5c45;color:white;padding:12px 18px;' +
+                        'border-radius:12px;font-size:0.85rem;font-weight:600;' +
+                        'font-family:Poppins,sans-serif;' +
+                        'box-shadow:0 4px 18px rgba(0,0,0,0.25);' +
+                        'animation:fadeIn 0.4s ease;';
+                    note.innerHTML = '<span style="margin-right:6px">✅</span> Welcome back, '
+                        + (p.name || 'User') + '!';
+                    document.body.appendChild(note);
+                    setTimeout(function() {
+                        note.style.opacity='0';
+                        note.style.transition='opacity 0.5s';
+                        setTimeout(function(){ note.remove(); }, 600);
+                    }, 3000);
+                }, 800);
+            } catch(e) {}
+        }
+    })();
+    </script>
+    """, height=0)
+    st.session_state.profile_loaded_from_storage = True
 
 # ══════════════════════════════════════
 # HEADER
@@ -357,24 +407,112 @@ if st.session_state.khareef:
 
 st.markdown("---")
 
-# ── Quick stat cards ───────────────────────────────
+# ── Clickable stat cards ───────────────────────────
+if "show_card_info" not in st.session_state:
+    st.session_state.show_card_info = None
+
 col1,col2,col3,col4 = st.columns(4)
-cards = [
-    (col1,"❤️","EMERGENCY","Call 999","#fee2e2","#fca5a5","#dc2626"),
-    (col2,"🩺","AI TRIAGE","GREEN/YELLOW/RED","#d1fae5","#6ee7b7","#065f46"),
-    (col3,"🌐","BILINGUAL","English + Arabic","#dbeafe","#93c5fd","#1e40af"),
-    (col4,"🌦️","KHAREEF","Salalah Season","#fef9c3","#fcd34d","#92400e"),
-]
-for col,emoji,title,sub,bg,border,color in cards:
-    with col:
-        st.markdown(f"""
-        <div style="background:{bg};border:1px solid {border};border-radius:14px;
-             padding:14px;text-align:center;box-shadow:0 2px 8px {color}18;
-             transition:transform 0.2s ease;" class="stat-card">
-            <div style="font-size:1.8rem;margin-bottom:4px">{emoji}</div>
-            <div style="font-weight:700;color:{color};font-size:0.82rem">{title}</div>
-            <div style="font-size:0.75rem;color:{color};opacity:0.75">{sub}</div>
-        </div>""", unsafe_allow_html=True)
+
+with col1:
+    st.markdown("""
+    <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:14px;
+         padding:14px;text-align:center;box-shadow:0 2px 8px #dc262618;cursor:pointer;">
+        <div style="font-size:1.8rem;margin-bottom:4px">❤️</div>
+        <div style="font-weight:700;color:#dc2626;font-size:0.82rem">EMERGENCY</div>
+        <div style="font-size:0.75rem;color:#dc2626;opacity:0.8">Call 999</div>
+    </div>""", unsafe_allow_html=True)
+    if st.button("Emergency Info", key="card_em", use_container_width=True):
+        st.session_state.show_card_info = "emergency"
+
+with col2:
+    st.markdown("""
+    <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:14px;
+         padding:14px;text-align:center;box-shadow:0 2px 8px #065f4618;cursor:pointer;">
+        <div style="font-size:1.8rem;margin-bottom:4px">🩺</div>
+        <div style="font-weight:700;color:#065f46;font-size:0.82rem">AI TRIAGE</div>
+        <div style="font-size:0.75rem;color:#065f46;opacity:0.8">GREEN/YELLOW/RED</div>
+    </div>""", unsafe_allow_html=True)
+    if st.button("How Triage Works", key="card_tr", use_container_width=True):
+        st.session_state.show_card_info = "triage"
+
+with col3:
+    st.markdown("""
+    <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:14px;
+         padding:14px;text-align:center;box-shadow:0 2px 8px #1e40af18;cursor:pointer;">
+        <div style="font-size:1.8rem;margin-bottom:4px">🌐</div>
+        <div style="font-weight:700;color:#1e40af;font-size:0.82rem">BILINGUAL</div>
+        <div style="font-size:0.75rem;color:#1e40af;opacity:0.8">English + Arabic</div>
+    </div>""", unsafe_allow_html=True)
+    if st.button("About Languages", key="card_la", use_container_width=True):
+        st.session_state.show_card_info = "bilingual"
+
+with col4:
+    st.markdown("""
+    <div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:14px;
+         padding:14px;text-align:center;box-shadow:0 2px 8px #92400e18;cursor:pointer;">
+        <div style="font-size:1.8rem;margin-bottom:4px">🌦️</div>
+        <div style="font-weight:700;color:#92400e;font-size:0.82rem">KHAREEF</div>
+        <div style="font-size:0.75rem;color:#92400e;opacity:0.8">Salalah Season</div>
+    </div>""", unsafe_allow_html=True)
+    if st.button("Khareef Mode Info", key="card_kh", use_container_width=True):
+        st.session_state.show_card_info = "khareef"
+
+# Show card info when clicked
+if st.session_state.show_card_info == "emergency":
+    with st.expander("Emergency Contacts — Salalah", expanded=True):
+        ec1,ec2,ec3 = st.columns(3)
+        with ec1: st.error("Ambulance / Police\n📞 **999**\n24 hours")
+        with ec2: st.info("Sultan Qaboos Hospital\n📞 +968 23 211 555\nAl Dahariz, Salalah")
+        with ec3: st.info("Badr Al Samaa Hospital\n📞 +968 23 219 999\n24 hours")
+        st.link_button("Open Emergency Tab for Full Guide →", "#")
+
+elif st.session_state.show_card_info == "triage":
+    with st.expander("How AI Triage Works", expanded=True):
+        st.markdown("""
+        The app uses a **medical rules engine** to assess your readings:
+
+        | Level | What it means | Action |
+        |---|---|---|
+        | 🟢 **GREEN** | All readings normal | Rest at home, monitor |
+        | 🟡 **YELLOW** | Mild concern | See a doctor soon |
+        | 🔴 **RED** | Urgent concern | Go to hospital NOW |
+
+        After triage, **Google Gemini AI** generates personalised advice in English and Arabic.
+        Go to the **Health Check tab** to assess your health!
+        """)
+
+elif st.session_state.show_card_info == "bilingual":
+    with st.expander("Bilingual Support", expanded=True):
+        st.success("""
+        **Khareef Health works in both English and Arabic**
+
+        - All advice given in both languages simultaneously
+        - Arabic text displayed right-to-left correctly
+        - Voice input supports Arabic (ar-OM dialect)
+        - Disease encyclopedia searchable in Arabic
+        - Toggle Arabic on/off in settings above
+        """)
+        st.markdown('<div class="ar" style="background:#fffbf0;padding:14px;border-radius:10px;font-size:1rem;border:1px solid #fde68a;line-height:2">تطبيق خريف هيلث متاح باللغتين العربية والإنجليزية. يمكنك الحصول على النصائح الطبية بكلتا اللغتين في آنٍ واحد.</div>', unsafe_allow_html=True)
+
+elif st.session_state.show_card_info == "khareef":
+    with st.expander("About Khareef Mode", expanded=True):
+        st.warning("""
+        **What is Khareef?**
+
+        Salalah experiences a unique **monsoon season (June–September)** called Khareef.
+        During this time:
+        - 🌫️ Humidity rises dramatically
+        - 🍄 Mold and fungal spores increase
+        - 😤 Asthma and respiratory problems worsen
+        - 🦟 Mosquito-borne diseases increase
+        - 🌡️ Heat stroke risk remains high
+
+        **Khareef Mode** adjusts the app to be more sensitive to respiratory symptoms
+        and gives extra warnings for elderly patients during this season.
+
+        Toggle it ON above from **June to September** every year.
+        """)
+
 st.markdown("")
 
 # ══════════════════════════════════════
