@@ -5,6 +5,22 @@ from datetime import datetime
 from data import Patient, validate_patient_input, normalize_symptoms
 from triage import assess_patient
 
+def section_header(icon, title, subtitle="", color="#1a5c45"):
+    """Reusable section header with medical graphic."""
+    import streamlit as st
+    st.markdown(f"""
+    <div style="display:flex;align-items:center;gap:14px;
+         background:white;border-radius:14px;padding:16px 20px;
+         margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,0.06);
+         border-left:5px solid {color};">
+        <div style="font-size:2.4rem;line-height:1">{icon}</div>
+        <div>
+            <div style="font-size:1.1rem;font-weight:700;color:{color}">{title}</div>
+            <div style="font-size:0.82rem;color:#6b7280">{subtitle}</div>
+        </div>
+        <div style="margin-left:auto;opacity:0.08;font-size:3rem;font-weight:900;color:{color}">✚</div>
+    </div>""", unsafe_allow_html=True)
+
 def render(T, save_record, log_patient, is_api_key_configured,
            get_gemini_advice, analyze_free_text, RECORDS_FILE):
 
