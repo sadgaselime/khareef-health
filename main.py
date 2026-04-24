@@ -245,6 +245,40 @@ if not st.session_state.welcomed:
     st.stop()
 
 # ══════════════════════════════════════
+# AUTO-LOAD PROFILE FROM BROWSER STORAGE
+# Runs on every visit — restores user data
+# ══════════════════════════════════════
+import streamlit.components.v1 as components
+
+# Inject script that reads localStorage and stores in URL param
+components.html("""
+<script>
+(function() {
+    var saved = localStorage.getItem('khareef_profile');
+    if (saved) {
+        try {
+            var p = JSON.parse(saved);
+            // Store in sessionStorage so Streamlit can read it
+            sessionStorage.setItem('khareef_loaded', saved);
+            // Update page title
+            document.title = 'Khareef Health';
+            // Show subtle notification
+            var note = document.createElement('div');
+            note.style.cssText = 'position:fixed;bottom:60px;right:20px;' +
+                'background:#1a5c45;color:white;padding:10px 16px;' +
+                'border-radius:10px;font-size:0.82rem;z-index:9999;' +
+                'font-family:Poppins,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,0.2);' +
+                'animation:fadeIn 0.3s ease;';
+            note.innerHTML = '&#10003; Welcome back, ' + (p.name || 'User') + '!';
+            document.body.appendChild(note);
+            setTimeout(function() { note.remove(); }, 3000);
+        } catch(e) {}
+    }
+})();
+</script>
+""", height=0)
+
+# ══════════════════════════════════════
 # HEADER
 # ══════════════════════════════════════
 g_emoji = "👨" if st.session_state.gender=="Male" else "👩" if st.session_state.gender=="Female" else "🌿"
