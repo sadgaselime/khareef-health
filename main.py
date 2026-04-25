@@ -134,7 +134,9 @@ if params.get("kn") and not st.session_state.profile_restored:
     try: st.session_state.user_conditions = json.loads(urllib.parse.unquote(params.get("kco","[]")))
     except: pass
     st.session_state.profile_restored = True
-    st.session_state.welcomed = True  # Skip welcome for returning users
+    st.session_state.welcomed = True  # Auto-skip welcome screen
+    # Clear URL params after restoration
+    st.query_params.clear()
 
 # ── Theme ─────────────────────────────────────────
 THEMES = {
@@ -202,7 +204,13 @@ if not st.session_state.welcomed:
     g = T['g']; p = T['p']
     is_returning = bool(st.session_state.user_name)
 
-    if is_returning:
+    if is_returning and st.session_state.profile_restored:
+        # Auto-skip for users with restored profiles
+        st.session_state.welcomed = True
+        log_visitor(st.session_state.user_name, "auto-login returning user")
+        st.rerun()
+    
+    elif is_returning:
         st.markdown(f"""
         <div style="background:linear-gradient({g});border-radius:20px;padding:32px;
              color:white;text-align:center;margin-bottom:24px;
