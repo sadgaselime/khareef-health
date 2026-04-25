@@ -20,6 +20,15 @@ from gemini_helper import (
 )
 from diseases import DISEASES, CATEGORIES, search_diseases, get_by_category
 
+# Voice + translations
+try:
+    from translations import t, LANGUAGES, get_lang_code, get_tts_code
+    from voice_utils import voice_input_component, text_to_speech_component
+    VOICE_ENABLED = True
+except ImportError:
+    VOICE_ENABLED = False
+    print("Voice features disabled - translations.py or voice_utils.py not found")
+
 # ── Storage ──────────────────────────────────────
 RECORDS_FILE  = "user_records.json"
 PROFILES_FILE = "user_profiles.json"
@@ -64,7 +73,7 @@ DEFAULTS = {
     "user_phone":"","user_blood_type":"Unknown",
     "khareef":False,"show_arabic":True,"use_ai":is_api_key_configured(),
     "welcomed":False,"profile_restored":False,"sid":str(uuid.uuid4())[:8],
-    "show_card_info":None,
+    "show_card_info":None,"language":"English",
 }
 for k,v in DEFAULTS.items():
     if k not in st.session_state: st.session_state[k]=v
@@ -319,8 +328,13 @@ st.markdown(f"""
 </div>""", unsafe_allow_html=True)
 
 # ── Settings bar ──────────────────────────────────
-st.markdown("#### Settings / الإعدادات")
-s1,s2,s3,s4 = st.columns([1.2,1,1,1])
+st.markdown("#### Settings / الإعدادات / সেটিংস")
+
+if VOICE_ENABLED:
+    s1,s2,s3,s4,s5 = st.columns([1.2,1.2,1,1,1])
+else:
+    s1,s3,s4,s5 = st.columns([1.2,1,1,1])
+
 with s1:
     new_g = st.selectbox("Gender Theme",
         ["Not specified","Male","Female"],
@@ -329,12 +343,22 @@ with s1:
     if new_g != st.session_state.gender:
         st.session_state.gender = new_g; st.rerun()
     st.caption({"Male":"💙 Blue","Female":"💗 Rose","Not specified":"💚 Green"}[st.session_state.gender])
-with s2:
-    st.session_state.khareef     = st.toggle("🌦️ Khareef Mode",  value=st.session_state.khareef,     key="kt")
+
+if VOICE_ENABLED:
+    with s2:
+        lang_opts = ["English", "العربية", "বাংলা"]
+        curr_idx = lang_opts.index(st.session_state.language) if st.session_state.language in lang_opts else 0
+        new_lang = st.selectbox("🌐 Language / لغة / ভাষা", lang_opts, index=curr_idx, key="lang_sel")
+        if new_lang != st.session_state.language:
+            st.session_state.language = new_lang; st.rerun()
+        st.caption({"English":"🇬🇧 EN","العربية":"🇸🇦 AR","বাংলা":"🇧🇩 BN"}[st.session_state.language])
+
 with s3:
-    st.session_state.show_arabic = st.toggle("🌐 Arabic / عربي", value=st.session_state.show_arabic,  key="at")
+    st.session_state.khareef = st.toggle("🌦️ Khareef",  value=st.session_state.khareef, key="kt")
 with s4:
-    st.session_state.use_ai      = st.toggle("🤖 AI Advice",     value=st.session_state.use_ai,       key="git")
+    st.session_state.show_arabic = st.toggle("📖 Arabic", value=st.session_state.show_arabic, key="at")
+with s5:
+    st.session_state.use_ai = st.toggle("🤖 AI", value=st.session_state.use_ai, key="git")
 
 if st.session_state.khareef:
     st.warning("🌦️ Khareef Mode ON — Higher respiratory sensitivity")
