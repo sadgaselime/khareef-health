@@ -1,4 +1,3 @@
-
 import streamlit as st
 
 st.set_page_config(
@@ -78,14 +77,29 @@ for k,v in DEFAULTS.items():
 components.html("""
 <script>
 (function() {
-    var url = new URL(window.parent.location.href);
-    // Only inject if not already done
-    if (url.searchParams.get('kn')) return;
-    var saved = localStorage.getItem('khareef_profile');
-    if (!saved) return;
     try {
+        var url = new URL(window.parent.location.href);
+        // Only inject if not already done
+        if (url.searchParams.get('kn')) {
+            console.log('Profile already loaded from URL params');
+            return;
+        }
+        
+        var saved = localStorage.getItem('khareef_profile');
+        if (!saved) {
+            console.log('No saved profile found in localStorage');
+            return;
+        }
+        
         var p = JSON.parse(saved);
-        if (!p.name) return;
+        if (!p.name) {
+            console.log('Profile exists but has no name');
+            return;
+        }
+        
+        console.log('Loading profile for:', p.name);
+        
+        // Set URL parameters
         url.searchParams.set('kn',  encodeURIComponent(p.name  || ''));
         url.searchParams.set('kp',  encodeURIComponent(p.phone || ''));
         url.searchParams.set('ka',  p.age   || 40);
@@ -94,9 +108,14 @@ components.html("""
         url.searchParams.set('kb',  encodeURIComponent(p.blood_type || 'Unknown'));
         url.searchParams.set('km',  encodeURIComponent(p.medications|| ''));
         url.searchParams.set('kco', encodeURIComponent(JSON.stringify(p.conditions||[])));
+        
+        // Update URL and reload
         window.parent.history.replaceState({}, '', url.toString());
+        console.log('Profile loaded, reloading page...');
         window.parent.location.reload();
-    } catch(e) {}
+    } catch(e) {
+        console.error('Error loading profile from localStorage:', e);
+    }
 })();
 </script>
 """, height=0)
@@ -311,6 +330,29 @@ with s4:
 
 if st.session_state.khareef:
     st.warning("🌦️ Khareef Mode ON — Higher respiratory sensitivity")
+
+# ── Welcome returning users ───────────────────────
+if st.session_state.user_name and st.session_state.profile_restored:
+    welcome_time = datetime.now().hour
+    if welcome_time < 12:
+        greeting = "Good morning" if not st.session_state.show_arabic else "صباح الخير"
+    elif welcome_time < 18:
+        greeting = "Good afternoon" if not st.session_state.show_arabic else "مساء الخير"
+    else:
+        greeting = "Good evening" if not st.session_state.show_arabic else "مساء الخير"
+    
+    st.markdown(f"""
+    <div style="background:linear-gradient({T['g']});color:white;border-radius:16px;
+         padding:20px 28px;margin-bottom:16px;box-shadow:0 4px 16px {T['p']}44;
+         animation:fadeUp 0.5s ease;">
+        <div style="font-size:1.8rem;margin-bottom:4px">{g_emoji}</div>
+        <div style="font-size:1.3rem;font-weight:700">{greeting}, {st.session_state.user_name}!</div>
+        <div style="font-size:0.9rem;opacity:0.9;margin-top:4px">
+            Welcome back · Age: {st.session_state.user_age} · {st.session_state.user_city}</div>
+        <div style="font-size:0.8rem;opacity:0.75;margin-top:6px">
+            Your profile is loaded and ready to use 🩺</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
