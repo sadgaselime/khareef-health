@@ -389,41 +389,46 @@ if st.session_state.user_name and st.session_state.profile_restored:
 st.markdown("---")
 
 # ── Clickable stat cards ───────────────────────────
+lang = st.session_state.language
 col1,col2,col3,col4 = st.columns(4)
 with col1:
-    st.markdown("""<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:14px;
+    st.markdown(f"""<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:14px;
          padding:14px;text-align:center;"><div style="font-size:1.8rem">❤️</div>
-         <div style="font-weight:700;color:#dc2626;font-size:0.82rem">EMERGENCY</div>
-         <div style="font-size:0.75rem;color:#dc2626;opacity:0.8">Call 999</div></div>""",
+         <div style="font-weight:700;color:#dc2626;font-size:0.82rem">{t("emergency_card", lang) if VOICE_ENABLED else "EMERGENCY"}</div>
+         <div style="font-size:0.75rem;color:#dc2626;opacity:0.8">{t("call_999", lang) if VOICE_ENABLED else "Call 999"}</div></div>""",
         unsafe_allow_html=True)
-    if st.button("Emergency Info", key="cem", use_container_width=True):
+    btn_text = t("emergency_info", lang) if VOICE_ENABLED else "Emergency Info"
+    if st.button(btn_text, key="cem", use_container_width=True):
         st.session_state.show_card_info = "emergency" if st.session_state.show_card_info!="emergency" else None
 
 with col2:
-    st.markdown("""<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:14px;
+    st.markdown(f"""<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:14px;
          padding:14px;text-align:center;"><div style="font-size:1.8rem">🩺</div>
-         <div style="font-weight:700;color:#065f46;font-size:0.82rem">AI TRIAGE</div>
-         <div style="font-size:0.75rem;color:#065f46;opacity:0.8">GREEN/YELLOW/RED</div></div>""",
+         <div style="font-weight:700;color:#065f46;font-size:0.82rem">{t("ai_triage", lang) if VOICE_ENABLED else "AI TRIAGE"}</div>
+         <div style="font-size:0.75rem;color:#065f46;opacity:0.8">{t("green_yellow_red", lang) if VOICE_ENABLED else "GREEN/YELLOW/RED"}</div></div>""",
         unsafe_allow_html=True)
-    if st.button("How It Works", key="ctr", use_container_width=True):
+    btn_text = t("how_it_works", lang) if VOICE_ENABLED else "How It Works"
+    if st.button(btn_text, key="ctr", use_container_width=True):
         st.session_state.show_card_info = "triage" if st.session_state.show_card_info!="triage" else None
 
 with col3:
-    st.markdown("""<div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:14px;
+    st.markdown(f"""<div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:14px;
          padding:14px;text-align:center;"><div style="font-size:1.8rem">🌐</div>
-         <div style="font-weight:700;color:#1e40af;font-size:0.82rem">BILINGUAL</div>
-         <div style="font-size:0.75rem;color:#1e40af;opacity:0.8">English + Arabic</div></div>""",
+         <div style="font-weight:700;color:#1e40af;font-size:0.82rem">{t("bilingual", lang) if VOICE_ENABLED else "MULTILINGUAL"}</div>
+         <div style="font-size:0.75rem;color:#1e40af;opacity:0.8">{t("three_languages", lang) if VOICE_ENABLED else "3 Languages"}</div></div>""",
         unsafe_allow_html=True)
-    if st.button("Languages", key="cla", use_container_width=True):
+    btn_text = t("languages_btn", lang) if VOICE_ENABLED else "Languages"
+    if st.button(btn_text, key="cla", use_container_width=True):
         st.session_state.show_card_info = "bilingual" if st.session_state.show_card_info!="bilingual" else None
 
 with col4:
-    st.markdown("""<div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:14px;
+    st.markdown(f"""<div style="background:#fef9c3;border:1px solid #fcd34d;border-radius:14px;
          padding:14px;text-align:center;"><div style="font-size:1.8rem">🌦️</div>
-         <div style="font-weight:700;color:#92400e;font-size:0.82rem">KHAREEF</div>
-         <div style="font-size:0.75rem;color:#92400e;opacity:0.8">Salalah Season</div></div>""",
+         <div style="font-weight:700;color:#92400e;font-size:0.82rem">{t("khareef", lang) if VOICE_ENABLED else "KHAREEF"}</div>
+         <div style="font-size:0.75rem;color:#92400e;opacity:0.8">{t("salalah_season", lang) if VOICE_ENABLED else "Salalah Season"}</div></div>""",
         unsafe_allow_html=True)
-    if st.button("Khareef Info", key="ckh", use_container_width=True):
+    btn_text = t("khareef_info", lang) if VOICE_ENABLED else "Khareef Info"
+    if st.button(btn_text, key="ckh", use_container_width=True):
         st.session_state.show_card_info = "khareef" if st.session_state.show_card_info!="khareef" else None
 
 if st.session_state.show_card_info == "emergency":
@@ -460,7 +465,12 @@ st.markdown("---")
 # ══════════════════════════════════════
 # TABS
 # ══════════════════════════════════════
+lang = st.session_state.language
 tabs = st.tabs([
+    t("profile", lang), t("health_check", lang), t("emergency", lang),
+    t("medicines", lang), t("women", lang), t("diseases", lang),
+    t("skin_ai", lang), t("med_scanner", lang), t("trends", lang), t("about", lang)
+] if VOICE_ENABLED else [
     "👤 Profile","🩺 Health Check","🚨 Emergency",
     "💊 Medicines","👩 Women","🦠 Diseases",
     "📸 Skin AI","💊📷 Med Scanner","📊 Trends","ℹ️ About"
@@ -474,9 +484,16 @@ with tab_profile:
     render(T, g_emoji, save_profile, load_json, PROFILES_FILE)
 
 with tab_assess:
-    from tabs.tab_assess import render
-    render(T, save_record, log_patient, is_api_key_configured,
-           get_gemini_advice, analyze_free_text, RECORDS_FILE)
+    # Use full multilingual voice version if available
+    try:
+        from tab_assess_full import render
+        render(T, save_record, log_patient, is_api_key_configured,
+               get_gemini_advice, analyze_free_text, RECORDS_FILE)
+    except ImportError:
+        # Fallback to original
+        from tabs.tab_assess import render
+        render(T, save_record, log_patient, is_api_key_configured,
+               get_gemini_advice, analyze_free_text, RECORDS_FILE)
 
 with tab_emergency:
     from tabs.tab_emergency import render
