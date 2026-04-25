@@ -1,5 +1,3 @@
-from streamlit_local_storage import LocalStorage
-localS = LocalStorage()
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
@@ -9,18 +7,7 @@ from datetime import datetime
 def render(T, g_emoji, save_profile, load_json, PROFILES_FILE):
     st.markdown("### Your Profile / ملفك الشخصي")
     st.caption("Your profile is saved on YOUR device — it will be here every time you return")
-# 🔹 Load profile from browser storage into session_state
-saved = localS.getItem("khareef_profile")
 
-if saved:
-    st.session_state.user_name        = saved.get("name", "")
-    st.session_state.user_age         = saved.get("age", 0)
-    st.session_state.gender           = saved.get("gender", "Not specified")
-    st.session_state.user_phone       = saved.get("phone", "")
-    st.session_state.user_city        = saved.get("city", "Salalah")
-    st.session_state.user_blood_type  = saved.get("blood_type", "Unknown")
-    st.session_state.user_conditions  = saved.get("conditions", [])
-    st.session_state.user_medications = saved.get("medications", "")
     # ── LOAD FROM BROWSER STORAGE ──────────────────
     # This JavaScript reads saved profile from browser localStorage
     # and passes it back to Streamlit via a hidden input
@@ -131,7 +118,8 @@ if saved:
             save_profile(profile)
 
             # Save to browser localStorage (persists for user)
-            localS.setItem("khareef_profile", profile)
+            profile_json = json.dumps(profile)
+            components.html(f"""
             <script>
             localStorage.setItem('khareef_profile', '{profile_json}');
             document.getElementById('localStatus').innerHTML =
