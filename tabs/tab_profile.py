@@ -118,15 +118,23 @@ def render(T, g_emoji, save_profile, load_json, PROFILES_FILE):
             save_profile(profile)
 
             # Save to browser localStorage (persists for user)
-            profile_json = json.dumps(profile)
+            # Use proper JSON escaping to prevent JavaScript injection bugs
+            profile_json = json.dumps(profile).replace("'", "\\'").replace('"', '\\"')
             components.html(f"""
             <script>
-            localStorage.setItem('khareef_profile', '{profile_json}');
-            document.getElementById('localStatus').innerHTML =
-                '<span style="color:#16a34a;font-weight:600">&#10003; Profile saved to your device permanently!</span>';
-            setTimeout(function() {{
-                document.getElementById('localStatus').innerHTML = '';
-            }}, 4000);
+            try {{
+                var profileData = {json.dumps(profile)};
+                localStorage.setItem('khareef_profile', JSON.stringify(profileData));
+                document.getElementById('localStatus').innerHTML =
+                    '<span style="color:#16a34a;font-weight:600">&#10003; Profile saved to your device permanently!</span>';
+                setTimeout(function() {{
+                    document.getElementById('localStatus').innerHTML = '';
+                }}, 4000);
+            }} catch(e) {{
+                document.getElementById('localStatus').innerHTML =
+                    '<span style="color:#dc2626;font-weight:600">&#10007; Error saving profile: ' + e.message + '</span>';
+                console.error('Profile save error:', e);
+            }}
             </script>
             <div id="localStatus" style="font-family:Poppins,sans-serif;font-size:0.9rem;
                  padding:8px 0;"></div>
@@ -201,6 +209,45 @@ def render(T, g_emoji, save_profile, load_json, PROFILES_FILE):
 
         else:
             st.info("Fill in your profile and click Save. It will be saved permanently on your device.")
+
+        st.markdown("---")
+
+        # Debug panel - show what's actually stored
+        with st.expander("🔍 Debug: View Stored Data"):
+            st.caption("This shows what's actually saved in your browser's localStorage")
+            components.html("""
+            <script>
+            window.onload = function() {
+                var saved = localStorage.getItem('khareef_profile');
+                var debugDiv = document.getElementById('debugInfo');
+                
+                if (saved) {
+                    try {
+                        var p = JSON.parse(saved);
+                        debugDiv.innerHTML =
+                            '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;' +
+                            'padding:12px;font-family:monospace;font-size:0.75rem;color:#166534;">' +
+                            '<b style="color:#15803d">✓ Profile found in localStorage</b><br><br>' +
+                            '<pre style="margin:0;white-space:pre-wrap;word-break:break-all;">' +
+                            JSON.stringify(p, null, 2) + '</pre></div>';
+                    } catch(e) {
+                        debugDiv.innerHTML =
+                            '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;' +
+                            'padding:12px;font-family:monospace;font-size:0.75rem;color:#991b1b;">' +
+                            '<b>✗ Error parsing stored data:</b><br>' + e.message + '<br><br>' +
+                            '<b>Raw data:</b><br>' + saved + '</div>';
+                    }
+                } else {
+                    debugDiv.innerHTML =
+                        '<div style="background:#fefce8;border:1px solid #fde047;border-radius:8px;' +
+                        'padding:12px;font-family:Poppins,sans-serif;font-size:0.85rem;color:#713f12;">' +
+                        '⚠ No data found in localStorage<br>' +
+                        'Save your profile above to store it on this device.</div>';
+                }
+            };
+            </script>
+            <div id="debugInfo"></div>
+            """, height=250)
 
         st.markdown("---")
 
