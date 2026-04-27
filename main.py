@@ -79,57 +79,12 @@ for k,v in DEFAULTS.items():
     if k not in st.session_state: st.session_state[k]=v
 
 # ══════════════════════════════════════════════════
-# STEP 1 — JS reads localStorage → sets URL params
-# Streamlit reads URL params → restores session state
-# This is the BRIDGE between JS and Python
+# PROFILE PERSISTENCE — Fixed localStorage bridge
+# Key fix: use a flag to avoid infinite reload loop,
+# and DON'T clear URL params immediately after reading.
 # ══════════════════════════════════════════════════
-components.html("""
-<script>
-(function() {
-    try {
-        var url = new URL(window.parent.location.href);
-        // Only inject if not already done
-        if (url.searchParams.get('kn')) {
-            console.log('Profile already loaded from URL params');
-            return;
-        }
-        
-        var saved = localStorage.getItem('khareef_profile');
-        if (!saved) {
-            console.log('No saved profile found in localStorage');
-            return;
-        }
-        
-        var p = JSON.parse(saved);
-        if (!p.name) {
-            console.log('Profile exists but has no name');
-            return;
-        }
-        
-        console.log('Loading profile for:', p.name);
-        
-        // Set URL parameters
-        url.searchParams.set('kn',  encodeURIComponent(p.name  || ''));
-        url.searchParams.set('kp',  encodeURIComponent(p.phone || ''));
-        url.searchParams.set('ka',  p.age   || 40);
-        url.searchParams.set('kg',  encodeURIComponent(p.gender     || 'Not specified'));
-        url.searchParams.set('kc',  encodeURIComponent(p.city       || 'Salalah'));
-        url.searchParams.set('kb',  encodeURIComponent(p.blood_type || 'Unknown'));
-        url.searchParams.set('km',  encodeURIComponent(p.medications|| ''));
-        url.searchParams.set('kco', encodeURIComponent(JSON.stringify(p.conditions||[])));
-        
-        // Update URL and reload
-        window.parent.history.replaceState({}, '', url.toString());
-        console.log('Profile loaded, reloading page...');
-        window.parent.location.reload();
-    } catch(e) {
-        console.error('Error loading profile from localStorage:', e);
-    }
-})();
-</script>
-""", height=0)
 
-# STEP 2 — Read URL params into session state
+# STEP 1: Read URL params first (before JS runs)
 params = st.query_params
 if params.get("kn") and not st.session_state.profile_restored:
     st.session_state.user_name        = urllib.parse.unquote(params.get("kn",""))
@@ -138,14 +93,88 @@ if params.get("kn") and not st.session_state.profile_restored:
     st.session_state.gender           = urllib.parse.unquote(params.get("kg","Not specified"))
     st.session_state.user_blood_type  = urllib.parse.unquote(params.get("kb","Unknown"))
     st.session_state.user_medications = urllib.parse.unquote(params.get("km",""))
-    try: st.session_state.user_age = int(params.get("ka", 40))
+    try: st.session_state.language    = urllib.parse.unquote(params.get("kl","English"))
+    except: pass
+    try: st.session_state.user_age    = int(params.get("ka", 40))
     except: pass
     try: st.session_state.user_conditions = json.loads(urllib.parse.unquote(params.get("kco","[]")))
     except: pass
     st.session_state.profile_restored = True
-    st.session_state.welcomed = True  # Auto-skip welcome screen
-    # Clear URL params after restoration
+    st.session_state.welcomed = True
+    # Clear URL params AFTER reading — clean URL
     st.query_params.clear()
+
+# STEP 2: JS reads localStorage and sets URL params ONLY if not already restored
+# Uses a session-scoped flag stored in sessionStorage to prevent reload loops
+components.html("""
+<script>
+(function() {
+    try {
+        // Check if we already did the redirect this session (prevents infinite loop)
+        if (sessionStorage.getItem('kh_loaded') === '1') {
+            console.log('Already loaded profile this session');
+            return;
+        }
+
+        var url = new URL(window.parent.location.href);
+        
+        // If URL already has profile params, Streamlit will handle it — mark done
+        if (url.searchParams.get('kn')) {
+            sessionStorage.setItem('kh_loaded', '1');
+            return;
+        }
+        
+        var saved = localStorage.getItem('khareef_profile');
+        if (!saved) return;
+        
+        var p;
+        try { p = JSON.parse(saved); } catch(e) { return; }
+        if (!p || !p.name) return;
+        
+        console.log('Restoring profile for:', p.name);
+        sessionStorage.setItem('kh_loaded', '1');
+        
+        url.searchParams.set('kn',  encodeURIComponent(p.name        || ''));
+        url.searchParams.set('kp',  encodeURIComponent(p.phone       || ''));
+        url.searchParams.set('ka',  p.age                            || 40);
+        url.searchParams.set('kg',  encodeURIComponent(p.gender      || 'Not specified'));
+        url.searchParams.set('kc',  encodeURIComponent(p.city        || 'Salalah'));
+        url.searchParams.set('kb',  encodeURIComponent(p.blood_type  || 'Unknown'));
+        url.searchParams.set('km',  encodeURIComponent(p.medications || ''));
+        url.searchParams.set('kl',  encodeURIComponent(p.language    || 'English'));
+        url.searchParams.set('kco', encodeURIComponent(JSON.stringify(p.conditions || [])));
+        
+        window.parent.history.replaceState({}, '', url.toString());
+        window.parent.location.reload();
+    } catch(e) {
+        console.error('Profile restore error:', e);
+    }
+})();
+</script>
+""", height=0)
+
+# Helper: save profile to localStorage (called after welcome or profile tab save)
+def save_to_localstorage():
+    profile_json = json.dumps({
+        "name":       st.session_state.user_name,
+        "phone":      st.session_state.user_phone,
+        "age":        st.session_state.user_age,
+        "gender":     st.session_state.gender,
+        "city":       st.session_state.user_city,
+        "blood_type": st.session_state.user_blood_type,
+        "medications":st.session_state.user_medications,
+        "language":   st.session_state.language,
+        "conditions": st.session_state.user_conditions,
+    }, ensure_ascii=False)
+    components.html(f"""
+    <script>
+    try {{
+        localStorage.setItem('khareef_profile', {json.dumps(profile_json)});
+        sessionStorage.setItem('kh_loaded', '1');
+        console.log('Profile saved to localStorage');
+    }} catch(e) {{ console.error('Save failed:', e); }}
+    </script>
+    """, height=0)
 
 # ── Theme ─────────────────────────────────────────
 THEMES = {
@@ -214,7 +243,6 @@ if not st.session_state.welcomed:
     is_returning = bool(st.session_state.user_name)
 
     if is_returning and st.session_state.profile_restored:
-        # Auto-skip for users with restored profiles
         st.session_state.welcomed = True
         log_visitor(st.session_state.user_name, "auto-login returning user")
         st.rerun()
@@ -242,9 +270,15 @@ if not st.session_state.welcomed:
                 for k in list(DEFAULTS.keys()):
                     st.session_state[k] = DEFAULTS[k]
                 st.query_params.clear()
-                components.html("<script>localStorage.removeItem('khareef_profile');</script>", height=0)
+                components.html("""
+                <script>
+                localStorage.removeItem('khareef_profile');
+                sessionStorage.removeItem('kh_loaded');
+                </script>
+                """, height=0)
                 st.rerun()
     else:
+        # ── NEW FIRST-TIME WELCOME with language picker ──
         st.markdown(f"""
         <div style="background:linear-gradient({g});border-radius:20px;padding:32px;
              color:white;text-align:center;margin-bottom:24px;
@@ -253,26 +287,58 @@ if not st.session_state.welcomed:
             <div style="font-size:2rem;font-weight:800;margin:10px 0">Khareef Health</div>
             <div style="opacity:0.9;font-size:0.95rem">
                 AI Telemedicine Triage · Salalah, Dhofar, Oman</div>
-            <div class="ar" style="opacity:0.75;margin-top:6px;font-size:0.9rem">
+            <div style="opacity:0.75;margin-top:6px;font-size:0.9rem;font-family:'Tajawal',sans-serif;direction:rtl">
                 مساعد الفرز الطبي الذكي · صلالة، ظفار، عُمان</div>
         </div>""", unsafe_allow_html=True)
-        wc1,wc2,wc3 = st.columns([1,2,1])
+
+        wc1, wc2, wc3 = st.columns([1,2,1])
         with wc2:
             st.markdown("#### Please introduce yourself 👋")
-            w_name  = st.text_input("Your Name / اسمك",
+
+            # ── Language selection ON welcome screen ──
+            lang_opts = ["English", "العربية", "বাংলা"]
+            lang_labels = {"English":"🇬🇧 English","العربية":"🇴🇲 العربية","বাংলা":"🇧🇩 বাংলা"}
+            w_lang = st.selectbox(
+                "🌐 Language / لغة / ভাষা",
+                lang_opts,
+                index=lang_opts.index(st.session_state.language) if st.session_state.language in lang_opts else 0,
+                format_func=lambda x: lang_labels[x],
+                key="welcome_lang"
+            )
+            if w_lang != st.session_state.language:
+                st.session_state.language = w_lang
+
+            st.markdown("---")
+
+            w_name   = st.text_input("Your Name / اسمك / আপনার নাম",
                 placeholder="e.g. Ahmed Al-Shanfari", key="wn")
-            w_phone = st.text_input("Phone (optional) / الهاتف",
+            w_phone  = st.text_input("Phone (optional) / الهاتف",
                 placeholder="+968 9X XXX XXXX", key="wp")
+
+            # Gender on welcome screen too — affects theme immediately
+            w_gender = st.selectbox(
+                "Gender / الجنس",
+                ["Not specified", "Male", "Female"],
+                index=["Not specified","Male","Female"].index(st.session_state.gender),
+                key="wg"
+            )
+
             c1,c2 = st.columns(2)
             if c1.button("Continue / متابعة", type="primary",
                     use_container_width=True, key="wbtn"):
-                st.session_state.welcomed   = True
-                st.session_state.user_name  = w_name.strip()
-                st.session_state.user_phone = w_phone.strip()
+                st.session_state.welcomed    = True
+                st.session_state.user_name   = w_name.strip()
+                st.session_state.user_phone  = w_phone.strip()
+                st.session_state.gender      = w_gender
+                st.session_state.language    = w_lang
                 log_visitor(w_name.strip() or "Anonymous", "first visit")
+                # Save to localStorage immediately
+                save_to_localstorage()
                 st.rerun()
             if c2.button("Skip / تخطي", use_container_width=True, key="wskip"):
-                st.session_state.welcomed = True
+                st.session_state.welcomed  = True
+                st.session_state.language  = w_lang
+                st.session_state.gender    = w_gender
                 log_visitor("Anonymous (skipped)", "skipped welcome")
                 st.rerun()
             st.caption("🔒 Your info is private and saved only on your device")
@@ -341,7 +407,9 @@ with s1:
         index=["Not specified","Male","Female"].index(st.session_state.gender),
         key="gs")
     if new_g != st.session_state.gender:
-        st.session_state.gender = new_g; st.rerun()
+        st.session_state.gender = new_g
+        save_to_localstorage()
+        st.rerun()
     st.caption({"Male":"💙 Blue","Female":"💗 Rose","Not specified":"💚 Green"}[st.session_state.gender])
 
 if VOICE_ENABLED:
@@ -350,8 +418,10 @@ if VOICE_ENABLED:
         curr_idx = lang_opts.index(st.session_state.language) if st.session_state.language in lang_opts else 0
         new_lang = st.selectbox("🌐 Language / لغة / ভাষা", lang_opts, index=curr_idx, key="lang_sel")
         if new_lang != st.session_state.language:
-            st.session_state.language = new_lang; st.rerun()
-        st.caption({"English":"🇬🇧 EN","العربية":"🇸🇦 AR","বাংলা":"🇧🇩 BN"}[st.session_state.language])
+            st.session_state.language = new_lang
+            save_to_localstorage()
+            st.rerun()
+        st.caption({"English":"🇬🇧 EN","العربية":"🇴🇲 AR","বাংলা":"🇧🇩 BN"}[st.session_state.language])
 
 with s3:
     st.session_state.khareef = st.toggle("🌦️ Khareef",  value=st.session_state.khareef, key="kt")
@@ -462,6 +532,37 @@ elif st.session_state.show_card_info == "khareef":
 st.markdown("")
 st.markdown("---")
 
+# ══════════════════════════════════════════════════
+# PROFILE CONTEXT BUILDER
+# Used by AI tabs to personalise responses
+# ══════════════════════════════════════════════════
+def build_user_profile_context():
+    """Returns a structured string with user profile for injecting into AI prompts."""
+    name        = st.session_state.get("user_name","") or "Unknown"
+    age         = st.session_state.get("user_age", 40)
+    gender      = st.session_state.get("gender","Not specified")
+    city        = st.session_state.get("user_city","Salalah")
+    blood_type  = st.session_state.get("user_blood_type","Unknown")
+    medications = st.session_state.get("user_medications","").strip()
+    conditions  = st.session_state.get("user_conditions",[])
+    khareef     = st.session_state.get("khareef", False)
+
+    ctx = f"""PATIENT PROFILE (use this to personalise your response):
+- Name: {name}
+- Age: {age} years
+- Gender: {gender}
+- Location: {city}, Oman
+- Blood type: {blood_type}
+- Known medical conditions: {', '.join(conditions) if conditions else 'None reported'}
+- Current medications: {medications if medications else 'None reported'}
+- Khareef season mode: {'YES — higher humidity/respiratory sensitivity' if khareef else 'No'}
+
+IMPORTANT: Always address the patient by name if known. Tailor advice to their age, gender, and conditions above. Do NOT invent conditions not listed. If medications are listed, consider potential interactions."""
+    return ctx
+
+# Make it available to all tabs via session_state
+st.session_state["_profile_context"] = build_user_profile_context()
+
 # ══════════════════════════════════════
 # TABS
 # ══════════════════════════════════════
@@ -482,15 +583,15 @@ tabs = st.tabs([
 with tab_profile:
     from tabs.tab_profile import render
     render(T, g_emoji, save_profile, load_json, PROFILES_FILE)
+    # After profile tab saves, persist to localStorage
+    save_to_localstorage()
 
 with tab_assess:
-    # Use full multilingual voice version if available
     try:
         from tab_assess_full import render
         render(T, save_record, log_patient, is_api_key_configured,
                get_gemini_advice, analyze_free_text, RECORDS_FILE)
     except ImportError:
-        # Fallback to original
         from tabs.tab_assess import render
         render(T, save_record, log_patient, is_api_key_configured,
                get_gemini_advice, analyze_free_text, RECORDS_FILE)
@@ -533,4 +634,4 @@ if st.query_params.get("admin","") == "true":
     render(load_json, save_json, RECORDS_FILE, PROFILES_FILE, VISITORS_FILE)
 
 st.markdown("---")
-st.caption("🌿 Khareef Health v4.1 · by Sadga Selime · Salalah, Oman · Powered by Google Gemini AI · Educational use only")
+st.caption("🌿 Khareef Health v4.2 · by Sadga Selime · Salalah, Oman · Powered by Google Gemini AI · Educational use only")
