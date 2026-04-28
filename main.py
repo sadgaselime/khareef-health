@@ -174,10 +174,13 @@ def save_to_localstorage():
 # ── Theme colors ──────────────────────────────────
 THEMES = {
     "Male":          {"p":"#1a4a8a","s":"#2d6fba","l":"#dbeafe","dark":"#0d2d5c",
+                      "a":"#0d2d5c","g":"135deg,#0d2d5c,#1a4a8a,#2d6fba",
                       "g1":"#0d2d5c","g2":"#1a4a8a","g3":"#2d6fba","accent":"#60a5fa"},
     "Female":        {"p":"#9d174d","s":"#db2777","l":"#fce7f3","dark":"#500724",
+                      "a":"#500724","g":"135deg,#500724,#9d174d,#db2777",
                       "g1":"#500724","g2":"#9d174d","g3":"#db2777","accent":"#f9a8d4"},
     "Not specified": {"p":"#1a5c45","s":"#2d8a65","l":"#d1fae5","dark":"#0d3d29",
+                      "a":"#0d3d29","g":"135deg,#0d3d29,#1a5c45,#2d8a65",
                       "g1":"#0d3d29","g2":"#1a5c45","g3":"#2d8a65","accent":"#6ee7b7"},
 }
 T = THEMES[st.session_state.gender]
