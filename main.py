@@ -660,8 +660,15 @@ if not st.session_state.welcomed:
             st.markdown(f"#### {L('introduce')}")
             w_name  = st.text_input(L("your_name"),placeholder="Ahmed Al-Shanfari",key="wn")
             w_phone = st.text_input(L("phone_optional"),placeholder="+968 9X XXX XXXX",key="wp")
-            w_gender= st.selectbox(L("gender"),["Not specified","Male","Female"],
-                index=["Not specified","Male","Female"].index(st.session_state.gender),key="wg")
+            _g_tx = {"English":["Not specified","Male","Female"],
+                      "العربية":["غير محدد","ذكر","أنثى"],
+                      "বাংলা":["অনির্দিষ্ট","পুরুষ","মহিলা"]}
+            _g_labels = _g_tx.get(w_lang, _g_tx["English"])
+            _g_to_en  = dict(zip(_g_labels, ["Not specified","Male","Female"]))
+            _g_cur    = dict(zip(["Not specified","Male","Female"], _g_labels)).get(st.session_state.gender, _g_labels[0])
+            _g_sel    = st.selectbox(L("gender"), _g_labels,
+                index=_g_labels.index(_g_cur) if _g_cur in _g_labels else 0, key="wg")
+            w_gender  = _g_to_en.get(_g_sel, "Not specified")
 
             c1,c2 = st.columns(2)
             if c1.button(L("continue_btn"),type="primary",use_container_width=True,key="wbtn"):
@@ -715,9 +722,16 @@ lang_labels = {"English":"🇬🇧 English","العربية":"🇴🇲 العر�
 
 s1,s2,s3,s4,s5 = st.columns([1.4,1.4,0.9,0.9,0.9])
 with s1:
-    new_g = st.selectbox(L("theme"),["Not specified","Male","Female"],
-        index=["Not specified","Male","Female"].index(st.session_state.gender),
-        key="gs",label_visibility="collapsed")
+    _gs_tx = {"English":["Not specified","Male","Female"],
+               "العربية":["غير محدد","ذكر","أنثى"],
+               "বাংলা":["অনির্দিষ্ট","পুরুষ","মহিলা"]}
+    _gs_labels = _gs_tx.get(st.session_state.language, _gs_tx["English"])
+    _gs_to_en  = dict(zip(_gs_labels, ["Not specified","Male","Female"]))
+    _gs_cur    = dict(zip(["Not specified","Male","Female"], _gs_labels)).get(st.session_state.gender, _gs_labels[0])
+    new_g_lbl  = st.selectbox(L("theme"), _gs_labels,
+        index=_gs_labels.index(_gs_cur) if _gs_cur in _gs_labels else 0,
+        key="gs", label_visibility="collapsed")
+    new_g = _gs_to_en.get(new_g_lbl, "Not specified")
     if new_g != st.session_state.gender:
         st.session_state.gender=new_g; save_to_localstorage(); st.rerun()
     st.caption({"Male":L("blue_theme"),"Female":L("rose_theme"),"Not specified":L("green_theme")}[st.session_state.gender])
@@ -823,41 +837,76 @@ tabs = st.tabs([L("tab_profile"),L("tab_health"),L("tab_emergency"),
 (tab_profile,tab_assess,tab_emergency,tab_medicine,tab_women,
  tab_diseases,tab_skin,tab_medscan,tab_research,tab_about) = tabs
 
-# ── Profile tab ───────────────────────────────────
+# ── Profile tab ── fully translated, bypasses external tab_profile.py ──────────
 with tab_profile:
-    try:
-        from tabs.tab_profile import render
-        render(T,g_emoji,save_profile,load_json,PROFILES_FILE)
-    except ImportError:
-        st.markdown(f'<p class="kh-section-label">{L("personal_info")}</p>',unsafe_allow_html=True)
-        c1,c2 = st.columns(2)
-        with c1: name_val=st.text_input(L("full_name"),value=st.session_state.user_name,key="p_name")
-        with c2: phone_val=st.text_input(L("phone"),value=st.session_state.user_phone,key="p_phone")
-        c1,c2 = st.columns(2)
-        with c1: age_val=st.number_input(L("age"),min_value=0,max_value=120,value=st.session_state.user_age,key="p_age")
-        with c2: gender_val=st.selectbox(L("gender"),["Not specified","Male","Female"],
-            index=["Not specified","Male","Female"].index(st.session_state.gender),key="p_gender")
-        c1,c2 = st.columns(2)
-        with c1: city_val=st.text_input(L("city"),value=st.session_state.user_city,key="p_city")
-        with c2:
-            bo=["Unknown","A+","A-","B+","B-","AB+","AB-","O+","O-"]
-            blood_val=st.selectbox(L("blood_type"),bo,
-                index=bo.index(st.session_state.user_blood_type) if st.session_state.user_blood_type in bo else 0,key="p_blood")
-        meds_val=st.text_input(L("medications"),value=st.session_state.user_medications,
-            placeholder=L("meds_placeholder"),key="p_meds")
-        cond_opts=["Diabetes","Hypertension","Heart Disease","Asthma","COPD",
-                   "Kidney Disease","Liver Disease","Cancer","Pregnancy"]
-        cond_val=st.multiselect(L("conditions"),cond_opts,
-            default=[c for c in st.session_state.user_conditions if c in cond_opts],key="p_conds")
-        if st.button(L("save_profile"),use_container_width=True,key="p_save"):
-            st.session_state.user_name=name_val.strip(); st.session_state.user_phone=phone_val.strip()
-            st.session_state.user_age=age_val; st.session_state.gender=gender_val
-            st.session_state.user_city=city_val.strip(); st.session_state.user_blood_type=blood_val
-            st.session_state.user_medications=meds_val.strip(); st.session_state.user_conditions=cond_val
-            save_profile({"name":name_val.strip(),"phone":phone_val.strip(),"age":age_val,
-                "gender":gender_val,"city":city_val.strip(),"blood_type":blood_val,
-                "medications":meds_val.strip(),"conditions":cond_val})
-            save_to_localstorage(); st.success(L("profile_saved")); st.rerun()
+    # Translated options
+    cond_en = ["Diabetes","Hypertension","Heart Disease","Asthma","COPD",
+               "Kidney Disease","Liver Disease","Cancer","Pregnancy"]
+    cond_tx = {
+        "English": cond_en,
+        "العربية": ["السكري","ارتفاع ضغط الدم","أمراض القلب","الربو","مرض الانسداد الرئوي",
+                    "أمراض الكلى","أمراض الكبد","السرطان","الحمل"],
+        "বাংলা":  ["ডায়াবেটিস","উচ্চ রক্তচাপ","হৃদরোগ","হাঁপানি","সিওপিডি",
+                   "কিডনি রোগ","যকৃতের রোগ","ক্যান্সার","গর্ভাবস্থা"],
+    }
+    gender_tx = {
+        "English": ["Not specified","Male","Female"],
+        "العربية": ["غير محدد","ذكر","أنثى"],
+        "বাংলা":  ["অনির্দিষ্ট","পুরুষ","মহিলা"],
+    }
+    lang_now     = st.session_state.language
+    cond_labels  = cond_tx.get(lang_now, cond_en)
+    gender_labels= gender_tx.get(lang_now, gender_tx["English"])
+    gender_to_en = dict(zip(gender_labels, ["Not specified","Male","Female"]))
+    en_to_gender = dict(zip(["Not specified","Male","Female"], gender_labels))
+    cond_to_en   = dict(zip(cond_labels, cond_en))
+    en_to_cond   = dict(zip(cond_en, cond_labels))
+
+    if st.session_state.user_name:
+        st.markdown(f"""<div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:12px;
+            padding:10px 16px;font-size:13px;color:#065f46;margin-bottom:14px;font-weight:600">
+            ✓ {st.session_state.user_name}</div>""", unsafe_allow_html=True)
+
+    st.markdown(f'<p class="kh-section-label">{L("personal_info")}</p>', unsafe_allow_html=True)
+    c1,c2 = st.columns(2)
+    with c1:
+        name_val = st.text_input(L("full_name"), value=st.session_state.user_name,
+            placeholder="Ahmed Al-Shanfari", key="p_name")
+    with c2:
+        age_val = st.number_input(L("age"), min_value=0, max_value=120,
+            value=st.session_state.user_age, key="p_age")
+    c1,c2 = st.columns(2)
+    with c1:
+        phone_val = st.text_input(L("phone"), value=st.session_state.user_phone,
+            placeholder="+968 9X XXX XXXX", key="p_phone")
+    with c2:
+        cur_g_lbl = en_to_gender.get(st.session_state.gender, gender_labels[0])
+        gender_sel = st.selectbox(L("gender"), gender_labels,
+            index=gender_labels.index(cur_g_lbl) if cur_g_lbl in gender_labels else 0, key="p_gender")
+        gender_val = gender_to_en.get(gender_sel, "Not specified")
+    c1,c2 = st.columns(2)
+    with c1:
+        city_val = st.text_input(L("city"), value=st.session_state.user_city,
+            placeholder="Salalah", key="p_city")
+    with c2:
+        bo = ["Unknown","A+","A-","B+","B-","AB+","AB-","O+","O-"]
+        blood_val = st.selectbox(L("blood_type"), bo,
+            index=bo.index(st.session_state.user_blood_type)
+                if st.session_state.user_blood_type in bo else 0, key="p_blood")
+    meds_val = st.text_input(L("medications"), value=st.session_state.user_medications,
+        placeholder=L("meds_placeholder"), key="p_meds")
+    cur_cond_labels = [en_to_cond.get(c,c) for c in st.session_state.user_conditions if c in cond_en]
+    cond_sel = st.multiselect(L("conditions"), cond_labels, default=cur_cond_labels, key="p_conds")
+    cond_val = [cond_to_en.get(c,c) for c in cond_sel]
+    if st.button(L("save_profile"), use_container_width=True, key="p_save"):
+        st.session_state.user_name=name_val.strip(); st.session_state.user_phone=phone_val.strip()
+        st.session_state.user_age=age_val; st.session_state.gender=gender_val
+        st.session_state.user_city=city_val.strip(); st.session_state.user_blood_type=blood_val
+        st.session_state.user_medications=meds_val.strip(); st.session_state.user_conditions=cond_val
+        save_profile({"name":name_val.strip(),"phone":phone_val.strip(),"age":age_val,
+            "gender":gender_val,"city":city_val.strip(),"blood_type":blood_val,
+            "medications":meds_val.strip(),"conditions":cond_val})
+        save_to_localstorage(); st.success(L("profile_saved")); st.rerun()
     save_to_localstorage()
 
 # ── Health Check tab ──────────────────────────────
